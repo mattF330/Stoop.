@@ -29,7 +29,7 @@ export default function App() {
     <div className="app">
       <aside>
         <div className="logo"><i>R</i>Rambl</div><div className="logo-sub">NYC rental portfolio</div>
-        {link("/", 1, "Portfolio", true)}{link("/add", 2, "Search properties")}{link("/map", 3, "Map")}{link("/news", 4, "News")}{link("/calculators", 5, "Calculators")}{link("/settings", 6, "Settings")}
+        {link("/", 1, "Portfolio", true)}{link("/map", 3, "Map")}{link("/news", 4, "News")}{link("/calculators", 5, "Calculators")}{link("/settings", 6, "Settings")}
         <SideStats />
         <div className="spacer" />
         <SideAccount />
