@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 import type { Loan } from "./finance";
-export interface PropertyRow { id: string; nickname: string | null; address: string; borough: string | null; bbl: string | null; property_type: string | null; is_condo_coop: boolean; units_residential: number | null; year_built: number | null; purchase_price: number | null; purchase_date: string | null; current_value: number | null; current_value_note: string | null; cash_invested: number | null; vacancy_pct: number; notes: string | null; }
+export interface PropertyRow { id: string; nickname: string | null; address: string; borough: string | null; bbl: string | null; property_type: string | null; is_condo_coop: boolean; units_residential: number | null; year_built: number | null; purchase_price: number | null; purchase_date: string | null; current_value: number | null; current_value_note: string | null; cash_invested: number | null; vacancy_pct: number; notes: string | null; lat?: number | null; lng?: number | null; }
 export interface LoanRow { id: string; property_id: string; lender: string | null; principal: number; rate_pct: number; term_years: number; start_date: string; }
 export interface ExpenseRow { id: string; property_id: string; category: string; annual_amount: number; is_estimate: boolean; }
 export interface UnitRow { id: string; property_id: string; label: string; tenant_name: string | null; monthly_rent: number; lease_end: string | null; is_stabilized: boolean | null; }
