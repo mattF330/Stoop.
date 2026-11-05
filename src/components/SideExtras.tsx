@@ -32,11 +32,11 @@ export function SideStats() {
   return (<div className="sx">
     <Link to="/add" className="sx-add">+ Add property</Link>
     {s && <div className="sx-card"><div className="sx-h">Your portfolio</div>
+      <div className="sx-r"><span>Properties</span><b>{s.props}</b></div>
+      <div className="sx-r"><span>Units</span><b>{s.units}</b></div>
       <div className="sx-r"><span>Property value</span><b>{money(s.value)}</b></div>
       <div className="sx-r"><span>Debt</span><b>{money(s.debt)}</b></div>
       <div className="sx-r"><span>Cash flow{cfm ? " /mo" : " /yr"}</span><b>{money(cfm ? s.cash / 12 : s.cash)}</b></div>
-      <div className="sx-r"><span>Properties</span><b>{s.props}</b></div>
-      <div className="sx-r"><span>Units</span><b>{s.units}</b></div>
       <div className="sx-r"><span>Monthly rent</span><b>{money(s.rent)}</b></div>
       <div className="sx-r"><span>Next lease ends</span><b>{s.next ? (s.next.days === 0 ? "today" : `${s.next.days}d`) : "none set"}</b></div>
       <div className="sx-n">Calculated from numbers you entered. May not be exact.</div></div>}
