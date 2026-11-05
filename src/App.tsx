@@ -12,7 +12,8 @@ import Settings from "./pages/Settings";
 import MapPage from "./map/MapPage";
 import Legal from "./pages/Legal";
 
-const BULLET = ["#B933AD", "#00A1DE", "#00933C", "#EE352E", "#0039A6", "#6D6E71"];
+const BULLET = ["#B933AD", "#00A1DE", "#00933C", "#EE352E", "#0039A6", "#FCCC0A"];
+const LETTER = ["P", "Sp", "M", "N", "C", "Se"];
 
 export default function App() {
   const { session, loading } = useAuth();
@@ -21,7 +22,7 @@ export default function App() {
   if (loc.pathname.startsWith("/legal/")) return <><Routes><Route path="/legal/:doc" element={<Legal />} /></Routes><Footer /></>;
   if (loading) return <div className="wrap">Loading…</div>;
   if (!session) return <><AuthPage /><Footer /></>;
-  const link = (to: string, n: number, label: string, end = false) => <NavLink to={to} end={end} className={({ isActive }) => (isActive ? "active" : "")}><em className="nb" style={{ background: BULLET[n - 1] }}>{n}</em>{label}</NavLink>;
+  const link = (to: string, n: number, label: string, end = false) => <NavLink to={to} end={end} className={({ isActive }) => (isActive ? "active" : "")}><em className="nb" style={{ background: BULLET[n - 1], color: n === 6 ? "#111" : undefined }}>{LETTER[n - 1]}</em>{label}</NavLink>;
   return (<DisclaimerGate>
     <div className="app">
       <aside>
