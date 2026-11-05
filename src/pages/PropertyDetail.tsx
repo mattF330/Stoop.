@@ -37,7 +37,7 @@ export default function PropertyDetail() {
       <div className="grid">{([["NOI", fmtMoney(m.noi)], ["Cash flow", fmtMoney(m.cashFlow)], ["Cap rate", m.capRate.toFixed(2) + "%"], ["Cash-on-cash", m.cashOnCash.toFixed(2) + "%"], ["Equity", fmtMoney(m.equity)], ["LTV", m.ltv.toFixed(1) + "%"], ["DSCR", m.dscr ? m.dscr.toFixed(2) : "—"]] as [string, string][]).map(([l, v]) => <div className="card stat" key={l}><div className="l">{l}</div><div className="v">{v}</div></div>)}</div>
       <p className="note">Calculated from your inputs. <EstimateBadge /></p>
       <RelatedNews p={p} units={units.length} hasLoans={loans.length > 0} />
-      <button className="ghost" onClick={() => { if (confirm("Remove this property and its loans, expenses and units?")) run(async () => { await deleteRow("properties", p.id); nav("/"); }); }}>Remove property</button></>}
+      <RemoveProperty onRemove={() => run(async () => { await deleteRow("properties", p.id); nav("/"); })} /></>}
 
     {tab === "records" && <Records p={p} />}
 
@@ -116,4 +116,10 @@ function RelatedNews({ p, units, hasLoans }: { p: PropertyRow; units: number; ha
   if (!rel.length) return null;
   return <div className="card"><h2>News that may matter here</h2>{rel.map(({ n, why }) => <p key={n.id}><a href={n.url} target="_blank" rel="noopener noreferrer">{n.title}</a><br /><span style={{ color: "var(--muted)", fontSize: ".82rem" }}>{n.source_name} · {why}</span></p>)}
     <SourceTag id="news" /><div className="note">Matches use simple keyword rules and can miss or over-match.</div></div>;
+}
+
+function RemoveProperty({ onRemove }: { onRemove: () => void }) {
+  const [ask, setAsk] = useState(false);
+  if (!ask) return <button className="ghost" onClick={() => setAsk(true)}>Remove property</button>;
+  return <div className="card"><p style={{ marginTop: 0 }}>Remove this property and its loans, costs and units? This can’t be undone.</p><div className="row"><button className="danger" onClick={onRemove}>Yes, remove it</button><button className="ghost" onClick={() => setAsk(false)}>Cancel</button></div></div>;
 }
