@@ -11,7 +11,6 @@ import News from "./pages/News";
 import Settings from "./pages/Settings";
 import MapPage from "./map/MapPage";
 import Legal from "./pages/Legal";
-import Search from "./pages/Search";
 
 const BULLET = ["#B933AD", "#00A1DE", "#00933C", "#EE352E", "#0039A6", "#6D6E71"];
 
@@ -27,13 +26,13 @@ export default function App() {
     <div className="app">
       <aside>
         <div className="logo"><i>R</i>Rambl</div><div className="logo-sub">NYC rental portfolio</div>
-        {link("/", 1, "Portfolio", true)}{link("/search", 2, "Search properties")}{link("/map", 3, "Map")}{link("/news", 4, "News")}{link("/calculators", 5, "Calculators")}{link("/settings", 6, "Settings")}
+        {link("/", 1, "Portfolio", true)}{link("/add", 2, "Search properties")}{link("/map", 3, "Map")}{link("/news", 4, "News")}{link("/calculators", 5, "Calculators")}{link("/settings", 6, "Settings")}
         <div className="spacer" />
         {demo && <div className="note" style={{ margin: 0, padding: "0 12px" }}><strong>Demo mode</strong>: fictional sample data stored in this browser only.</div>}
       </aside>
       <div><main className="wrap"><Routes>
         <Route path="/" element={<Dashboard />} /><Route path="/add" element={<AddProperty />} /><Route path="/property/:id" element={<PropertyDetail />} />
-        <Route path="/search" element={<Search />} /><Route path="/map" element={<MapPage />} /><Route path="/news" element={<News />} /><Route path="/calculators" element={<Calculators />} /><Route path="/settings" element={<Settings />} />
+        <Route path="/map" element={<MapPage />} /><Route path="/news" element={<News />} /><Route path="/calculators" element={<Calculators />} /><Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" />} /></Routes></main></div>
     </div><Footer />
   </DisclaimerGate>);

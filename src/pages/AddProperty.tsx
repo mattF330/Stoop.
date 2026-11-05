@@ -26,7 +26,7 @@ export default function AddProperty() {
     } catch (x) { setErr((x as Error).message); setBusy(false); }
   };
 
-  return (<><h1>Add a property</h1>
+  return (<><h1>Search properties</h1><p className="muted">Find an NYC address to add to your portfolio.</p>
     {sel && <div className="card"><div className="row" style={{ alignItems: "center" }}><h2 style={{ margin: 0 }}>{sel.label}</h2><button className="ghost sm" type="button" onClick={() => setSel(null)}>Change address</button></div>
       <label>Nickname (optional)<input value={nick} onChange={e => setNick(e.target.value)} /></label>
       <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" style={{ width: "auto" }} checked={own} onChange={e => setOwn(e.target.checked)} />I own or manage this property. Rambl does not verify ownership.</label>
