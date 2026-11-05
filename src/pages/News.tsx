@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { SourceTag } from "../components/Disclaimers";
+import DailyBrief from "../components/DailyBrief";
 import { isRelevant } from "../../supabase/functions/_shared/relevance";
 interface Item { id: string; url: string; title: string; source_name: string; published_at: string | null; excerpt: string | null; topics: string[]; score: number; fetched_at: string; }
 const STALE_MS = 6 * 3600 * 1000;
@@ -21,6 +22,7 @@ export default function News() {
   const failed = sources ? Object.entries(sources).filter(([, v]) => v.startsWith("failed")) : [];
   const newest = items?.length ? new Date(Math.max(...items.map(i => new Date(i.fetched_at).getTime()))) : null;
   return (<><div className="row" style={{ alignItems: "center" }}><div><p className="eyebrow">NYC real estate</p><h1>News</h1></div><button className="ghost" onClick={refresh} disabled={busy}>{busy ? "Refreshing…" : "Refresh"}</button></div>
+    <DailyBrief />
     <SourceTag id="news" asOf={newest ? newest.toISOString() : null} />
     <p className="note">Filtered to stories about New York City real estate. Everything else is hidden.</p>
     {err && <p className="err">{err}</p>}
