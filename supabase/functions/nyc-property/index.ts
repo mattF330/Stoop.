@@ -1,6 +1,6 @@
 // Deno Edge Function. Auth required. No API keys needed; optional NYC_APP_TOKEN raises Socrata rate limits.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { parseGeoSearch, isValidBBL, splitBBL, parsePluto, parseAcrisMaster, summarizeHpd, parseFlag, flagQuery, sodaUrl, soql, DATASETS, MORTGAGE_TYPES } from "./nyc.ts";
+import { parseGeoSearch, isValidBBL, splitBBL, parsePluto, parseAcrisMaster, summarizeHpd, sodaUrl, soql, DATASETS, MORTGAGE_TYPES } from "./nyc.ts";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
@@ -50,12 +50,6 @@ Deno.serve(async (req) => {
         result.acris = parseAcrisMaster(master).filter(d => MORTGAGE_TYPES.includes(d.type) || ["DEED", "DEEDO", "RPTT&RET"].includes(d.type)).slice(0, 25);
       })().catch(e => { result.errors.acris = String(e.message); }));
       tasks.push(get(sodaUrl(DATASETS.hpdViolations, { $select: "violationstatus,class,count(*) as n", $where: `bbl='${soql(body.bbl)}'`, $group: "violationstatus,class", $limit: "100" })).then(r => { result.hpd = summarizeHpd(r); }).catch(e => { result.errors.hpd = String(e.message); }));
-      for (const [key, env, label] of [["stabilization", "STAB", "a rent-stabilization building list"], ["ll97", "LL97", "an LL97 covered-buildings list"]] as const) {
-        const ds = Deno.env.get(`${env}_DATASET`), field = Deno.env.get(`${env}_BBL_FIELD`) ?? "bbl";
-        result.flags ??= {};
-        if (!ds) { result.flags[key] = parseFlag(null, false, label); continue; }
-        tasks.push(get(sodaUrl(ds, flagQuery(field, body.bbl))).then(r => { result.flags[key] = parseFlag(r, true, label); }).catch(e => { result.errors[key] = String(e.message); }));
-      }
       await Promise.all(tasks);
       result.fetchedAt = new Date().toISOString();
       if (!Object.keys(result.errors).length) await admin.from("public_records_cache").upsert({ bbl: body.bbl, source: "bundle", payload: result, fetched_at: result.fetchedAt });

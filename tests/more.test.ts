@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { relevantNews } from "../src/lib/alerts";
 import { toCsv } from "../src/lib/csv";
-import { parseFlag, flagQuery } from "../supabase/functions/_shared/nyc";
 import { createDemoClient } from "../src/lib/demo";
 
 const n = (o: any) => ({ id: "1", title: "", excerpt: "", topics: [], published_at: null, url: "u", source_name: "s", ...o });
@@ -14,11 +13,6 @@ describe("alerts", () => {
 });
 describe("csv", () => {
   it("escapes and neutralizes formulas", () => { const c = toCsv([{ a: "x,y", b: "=SUM(A1)", c: 'q"t' }]); expect(c).toContain('"x,y"'); expect(c).toContain("'=SUM(A1)"); expect(c).toContain('"q""t"'); });
-});
-describe("flags", () => {
-  it("unchecked is not 'not listed'", () => expect(parseFlag(null, false, "L")).toEqual({ checked: false, listed: false, evidence: null }));
-  it("hit/miss", () => { expect(parseFlag([{}], true, "L").listed).toBe(true); expect(parseFlag([], true, "L").listed).toBe(false); });
-  it("rejects injection in field", () => expect(() => flagQuery("a;drop", "3000010001")).toThrow());
 });
 describe("demo client", () => {
   const store: Record<string, string> = {}; (globalThis as any).localStorage = { getItem: (k: string) => store[k] ?? null, setItem: (k: string, v: string) => { store[k] = v; } };

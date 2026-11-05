@@ -65,16 +65,3 @@ export function sodaUrl(ds: string, params: Record<string, string>) {
   return u.toString();
 }
 export const soql = (v: string) => v.replace(/'/g, "''");
-
-// Flag datasets (rent stabilization, LL97). Dataset IDs/BBL field names are NOT hardcoded because they must be
-// verified against live NYC Open Data; set them as Edge Function secrets, e.g. STAB_DATASET=xxxx-xxxx STAB_BBL_FIELD=ucbbl
-export interface FlagResult { checked: boolean; listed: boolean; evidence: string | null; }
-export function parseFlag(rows: any[] | null | undefined, checked: boolean, label: string): FlagResult {
-  if (!checked) return { checked: false, listed: false, evidence: null };
-  const hit = Array.isArray(rows) && rows.length > 0;
-  return { checked: true, listed: hit, evidence: hit ? `Appears on ${label}` : `Not found on ${label}` };
-}
-export function flagQuery(bblField: string, bbl: string) {
-  if (!/^[a-z_][a-z0-9_]*$/i.test(bblField)) throw new Error("bad_field");
-  return { $where: `${bblField}='${soql(bbl)}'`, $limit: "1" };
-}

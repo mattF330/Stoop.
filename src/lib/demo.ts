@@ -77,7 +77,6 @@ function invoke(_name: string, opts: { body: any }) {
       pluto: { address: "DEMO", bldgClass: "C1", unitsRes: 6, unitsTotal: 6, floors: 4, yearBuilt: 1931, lotArea: 2500, bldgArea: 6200, zoning: "R6B", owner: "SAMPLE OWNER LLC", assessLand: 210000, assessTotal: 640000, isCondoOrCoop: false },
       acris: [{ documentId: "d1", type: "MTGE", amount: 1200000, recorded: "2019-06-12T00:00:00", docDate: "2019-06-01" }, { documentId: "d2", type: "DEED", amount: 1650000, recorded: "2019-06-12T00:00:00", docDate: "2019-06-01" }],
       hpd: { sampled: 14, open: 3, byClass: { A: 1, B: 2 } },
-      flags: { stabilization: { listed: true, evidence: "Sample: building appears on a stabilization list (DEMO)" }, ll97: { covered: false, evidence: "Sample (DEMO)" } },
     }, error: null });
   }
   return Promise.resolve({ data: null, error: { message: "not available in demo" } });

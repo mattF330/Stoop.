@@ -1,6 +1,6 @@
 # Stoop
 
-NYC-only landlord app. Portfolio of properties you own, free NYC public records (GeoSearch, PLUTO, ACRIS, HPD, DOF), daily NYC real-estate news, debt and cost breakdowns. No paid data APIs. No AI features in v1.
+NYC-only landlord app. Portfolio of properties you own, free NYC public records (GeoSearch, PLUTO, ACRIS, HPD), daily NYC real-estate news, debt and cost breakdowns. No paid data APIs. No AI features in v1.
 
 **Every outside figure is labeled with its source and date and carries "may not be 100% accurate". Users acknowledge a data disclaimer on first use (stored in `terms_acceptances`).** Copy lives in `src/lib/sources.ts`.
 
@@ -15,7 +15,6 @@ NYC-only landlord app. Portfolio of properties you own, free NYC public records 
   2. Supabase dashboard > Edge Functions > Secrets: add `CRON_SECRET` (any long random string). Until then `news-ingest` rejects every call.
   3. Optional daily news: run `supabase/optional/news_cron.sql` with your project ref and that same secret. Or call the function once by hand to fill the news page.
   4. Authentication > URL Configuration: set Site URL to where you host the app.
-  5. Optional: `STAB_DATASET`/`STAB_BBL_FIELD`/`LL97_DATASET`/`LL97_BBL_FIELD` secrets for the stabilization and LL97 flags. Without them the UI says "Not checked".
 - `.env` already holds the project URL and publishable key. Run `npm install && npm run dev`.
 
 ## Checks

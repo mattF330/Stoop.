@@ -68,18 +68,13 @@ function Records({ p }: { p: PropertyRow }) {
     <div className="row"><span /> <button className="ghost" onClick={() => go(true)} disabled={busy}>{busy ? "Loading…" : "Refresh"}</button></div>
     {err && <p className="err">Couldn’t load public records: {err}</p>}
     {b && Object.entries(b.errors ?? {}).map(([k, v]) => <p key={k} className="note">{k.toUpperCase()} unavailable right now ({v}).</p>)}
-    {b?.pluto && <div className="card"><h2>Assessed value</h2>
+    {b?.pluto && <div className="card"><h2>Assessed value (from PLUTO)</h2>
       <table><tbody><tr><th>Total assessed</th><td>{b.pluto.assessTotal ? fmtMoney(b.pluto.assessTotal) : "—"}</td></tr><tr><th>Land assessed</th><td>{b.pluto.assessLand ? fmtMoney(b.pluto.assessLand) : "—"}</td></tr><tr><th>Owner of record (PLUTO)</th><td>{b.pluto.owner ?? "—"}</td></tr></tbody></table>
-      <SourceTag id="dof" asOf={b.fetchedAt} /><SectionNote id="dof" /></div>}
+      <SourceTag id="pluto" asOf={b.fetchedAt} /><SectionNote id="pluto" /></div>}
     {b?.acris && <div className="card"><h2>Deeds & mortgages (ACRIS)</h2>
       {b.acris.length === 0 ? <p>No matching documents found.</p> : <table><thead><tr><th>Recorded</th><th>Type</th><th>Amount</th></tr></thead><tbody>
         {b.acris.map(d => <tr key={d.documentId}><td>{d.recorded?.slice(0, 10) ?? "—"}</td><td>{(d as any).label ?? d.type}</td><td>{d.amount ? fmtMoney(d.amount) : "—"}</td></tr>)}</tbody></table>}
       <SourceTag id="acris" asOf={b.fetchedAt} /><SectionNote id="acris" /></div>}
-    {b?.flags && <div className="card"><h2>Regulatory flags</h2>
-      {(["stabilization", "ll97"] as const).map(k => { const f = b.flags![k]; const title = k === "stabilization" ? "Rent stabilization" : "Local Law 97";
-        const hit = f && (f.listed || f.covered); const checked = f && f.checked !== false;
-        return <p key={k}><strong>{title}:</strong> {!checked ? "Not checked (data source not configured)." : hit ? (k === "stabilization" ? "Possible — building appears on a list. Not confirmed for any unit." : "May apply — building appears on a list.") : "Not found on the list used."} <span style={{ color: "var(--muted)" }}>{f?.evidence}</span></p>; })}
-      <SourceTag id="stabilization" asOf={b.fetchedAt} /><SectionNote id="stabilization" /><SectionNote id="ll97" /></div>}
     {b?.hpd && <div className="card"><h2>HPD violations</h2>
       <p><strong>{b.hpd.open}</strong> open of {b.hpd.sampled} total{Object.keys(b.hpd.byClass).length > 0 && ` (${Object.entries(b.hpd.byClass).map(([c, n]) => `Class ${c}: ${n}`).join(", ")})`}</p>
       <SourceTag id="hpd" asOf={b.fetchedAt} /><SectionNote id="hpd" /></div>}

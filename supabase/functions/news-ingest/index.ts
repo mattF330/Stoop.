@@ -6,7 +6,6 @@ import { parseFeed, dedupe } from "./news.ts";
 
 // Edit freely. The response reports which feeds worked.
 const FEEDS: { name: string; url: string }[] = [
-  { name: "The Real Deal", url: "https://therealdeal.com/feed/" },
   { name: "Curbed NY / Vox", url: "https://www.curbed.com/rss/index.xml" },
   { name: "Gothamist", url: "https://gothamist.com/feed" },
   { name: "City Limits", url: "https://citylimits.org/feed/" },
