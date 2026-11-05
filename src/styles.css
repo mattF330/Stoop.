@@ -76,3 +76,12 @@ input,select,textarea{border-radius:6px}
 :root[data-theme=dark] aside{background:#000}:root[data-theme=dark] .band{background:#000;box-shadow:0 0 0 100vmax #000}
 :root[data-theme=dark] .stats,:root[data-theme=dark] .list{border-color:#F2F2F2}:root[data-theme=dark] .item:hover{background:#141414}:root[data-theme=dark] .seg button.on,:root[data-theme=dark] .snav button.on{background:#F2F2F2;color:#111}
 @media(max-width:860px){aside{flex-wrap:wrap}aside .logo-sub{display:none}.band .hero{font-size:44px}.band{margin-top:-32px}.item{grid-template-columns:44px 1fr 110px}.item .h{display:none}}
+
+.authwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 20px 120px}
+.authbox{width:100%;max-width:400px;text-align:center}
+.authlogo{display:flex;align-items:center;justify-content:center;gap:12px;font-size:44px;font-weight:700;letter-spacing:-.04em}
+.authlogo i{width:46px;height:46px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font:700 26px Helvetica,Arial,sans-serif;font-style:normal;letter-spacing:0}
+.authsub{color:var(--muted);margin:8px 0 26px;font-size:14px}
+.authbox form{text-align:left;margin:0}.authbox form p:last-child{display:flex;gap:8px;flex-wrap:wrap}
+body:has(.authwrap) footer.disc,body:has(.legal) footer.disc{left:0}
+.authwrap{padding-bottom:90px}
