@@ -46,5 +46,5 @@ export default function Dashboard() {
       <div className="n h">{prefs.showNoi ? <>{fmtMoney(m.noi)}<small>NOI</small></> : null}</div>
       <div className="n h">{prefs.showCap ? <>{m.capRate.toFixed(1)}%<small>Cap rate</small></> : null}</div>
       <div className={"n " + (m.cashFlow >= 0 ? "good" : "bad")}>{m.cashFlow > 0 ? "+" : ""}{fmtMoney(cf(m.cashFlow))}<small>Cash flow / {monthly ? "mo" : "yr"}</small></div><span style={{ color: "var(--muted)" }}>›</span></Link>)}</div>
-    <p className="note">Totals use the values, rents and loan terms you entered. Stoop doesn’t appraise properties.</p></>);
+    <p className="note">Totals use the values, rents and loan terms you entered. Tar Beach doesn’t appraise properties.</p></>);
 }

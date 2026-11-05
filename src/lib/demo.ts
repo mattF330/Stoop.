@@ -1,4 +1,4 @@
-// Local demo backend: mimics the small slice of the Supabase client Stoop uses, persisted in localStorage.
+// Local demo backend: mimics the small slice of the Supabase client Tar Beach uses, persisted in localStorage.
 // ALL data here is fictional sample data and is labeled as such in the UI.
 const KEY = "stoop-demo-db-v1";
 type Row = Record<string, any>;

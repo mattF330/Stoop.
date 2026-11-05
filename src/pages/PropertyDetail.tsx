@@ -32,7 +32,7 @@ export default function PropertyDetail() {
           <div><label>Purchase price<input type="number" defaultValue={p.purchase_price ?? ""} onBlur={e => run(() => updateRow("properties", p.id, { purchase_price: e.target.value === "" ? null : Number(e.target.value) }))} /></label></div>
           <div><label>Cash invested<input type="number" defaultValue={p.cash_invested ?? ""} onBlur={e => run(() => updateRow("properties", p.id, { cash_invested: e.target.value === "" ? null : Number(e.target.value) }))} /></label></div>
           <div><label>Vacancy %<input type="number" defaultValue={p.vacancy_pct} onBlur={e => run(() => updateRow("properties", p.id, { vacancy_pct: Number(e.target.value) || 0 }))} /></label></div></div>
-        <p className="note">Value is whatever you enter; Stoop does not appraise.</p></div>
+        <p className="note">Value is whatever you enter; Tar Beach does not appraise.</p></div>
       <div className="grid">{([["NOI", fmtMoney(m.noi)], ["Cash flow", fmtMoney(m.cashFlow)], ["Cap rate", m.capRate.toFixed(2) + "%"], ["Cash-on-cash", m.cashOnCash.toFixed(2) + "%"], ["Equity", fmtMoney(m.equity)], ["LTV", m.ltv.toFixed(1) + "%"], ["DSCR", m.dscr ? m.dscr.toFixed(2) : "—"]] as [string, string][]).map(([l, v]) => <div className="card stat" key={l}><div className="l">{l}</div><div className="v">{v}</div></div>)}</div>
       <p className="note">Calculated from your inputs. <EstimateBadge /></p>
       <RelatedNews p={p} units={units.length} hasLoans={loans.length > 0} />

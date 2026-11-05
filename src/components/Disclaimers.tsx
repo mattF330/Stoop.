@@ -26,7 +26,7 @@ export function DisclaimerGate({ children }: { children: React.ReactNode }) {
   };
   return (<div className="modal"><div className="card"><h2>Before you start</h2>
     <p>{GLOBAL_DISCLAIMER}</p>
-    <p className="note">Property data comes from NYC agencies (City Planning, Finance, HPD, DOB) and news publishers. Stoop labels every outside figure with its source and date. Values marked “Estimate” are calculated from your inputs.</p>
+    <p className="note">Property data comes from NYC agencies (City Planning, Finance, HPD, DOB) and news publishers. Tar Beach labels every outside figure with its source and date. Values marked “Estimate” are calculated from your inputs.</p>
     {err && <p className="err">{err}</p>}
     <p className="note">By continuing you agree to the <Link to="/legal/terms" target="_blank">Terms of Service</Link> and <Link to="/legal/privacy" target="_blank">Privacy Policy</Link>, and understand the <Link to="/legal/data-sources" target="_blank">data-source disclaimers</Link>.</p>
     <button onClick={accept} disabled={busy}>I agree and understand</button></div></div>);

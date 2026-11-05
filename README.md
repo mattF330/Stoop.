@@ -1,11 +1,11 @@
-# Stoop
+# Tar Beach
 
 NYC-only landlord app. Portfolio of properties you own, free NYC public records (GeoSearch, PLUTO, ACRIS, HPD), daily NYC real-estate news, debt and cost breakdowns. No paid data APIs. No AI features in v1.
 
 **Every outside figure is labeled with its source and date and carries "may not be 100% accurate". Users acknowledge a data disclaimer on first use (stored in `terms_acceptances`).** Copy lives in `src/lib/sources.ts`.
 
 ## Try it now (no accounts needed)
-`npm install && npm run dev`. With no `.env`, Stoop runs in **demo mode**: a local, fictional backend in your browser (sample address matches, sample public records, sample news). Banner says DEMO MODE. Add `.env` to switch to real Supabase.
+`npm install && npm run dev`. With no `.env`, Tar Beach runs in **demo mode**: a local, fictional backend in your browser (sample address matches, sample public records, sample news). Banner says DEMO MODE. Add `.env` to switch to real Supabase.
 
 ## Status of the live Supabase project ("Stoop.", ref bbgrgoagwcfqxhzwidlm)
 - Done: schema + RLS migration applied; signup-trigger function locked down; Edge Functions `nyc-property` (JWT required) and `news-ingest` (secret header) deployed.

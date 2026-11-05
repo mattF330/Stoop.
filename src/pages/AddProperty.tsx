@@ -46,7 +46,7 @@ export default function AddProperty() {
         {bundle.pluto.isCondoOrCoop && <p className="note">This looks like a condo or co-op building. The lot may contain many separately owned units — confirm your unit before adding.</p>}</>}
       {bundle && !bundle.pluto && <p className="note">No PLUTO record was found for this lot. You can still add it manually.</p>}
       <label>Nickname (optional)<input value={nick} onChange={e => setNick(e.target.value)} /></label>
-      <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" style={{ width: "auto" }} checked={own} onChange={e => setOwn(e.target.checked)} />I own or manage this property. Stoop does not verify ownership.</label>
+      <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" style={{ width: "auto" }} checked={own} onChange={e => setOwn(e.target.checked)} />I own or manage this property. Tar Beach does not verify ownership.</label>
       <p><button onClick={save} disabled={!own || busy}>Add to portfolio</button></p></div>}
     {!manualAddr && <p><a href="#" onClick={e => { e.preventDefault(); setManualAddr(true); setSel({ label: q, bbl: null, borough: null, bin: null, lat: null, lng: null }); }}>Can’t find it? Add manually</a></p>}
   </>);
