@@ -3,6 +3,7 @@
 // Stores headline/source/link/short excerpt only, never full articles.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { parseFeed, dedupe } from "./news.ts";
+import { isRelevant } from "./relevance.ts";
 
 // Edit freely. The response reports which feeds worked.
 const FEEDS: { name: string; url: string }[] = [
@@ -40,9 +41,13 @@ Deno.serve(async (req) => {
       const items = parseFeed(await r.text(), f.name); all.push(...items); status[f.name] = `ok:${items.length}`;
     } catch (e) { status[f.name] = `failed:${(e as Error).message}`; }
   }));
-  const fresh = dedupe(all.filter(i => i.score > 0)).slice(0, 200);
+  const fresh = dedupe(all.filter(i => i.score > 0 && isRelevant(i.title, i.excerpt, i.source_name))).slice(0, 200);
   let dbError: string | null = null;
   if (fresh.length) { const { error } = await admin.from("news_items").upsert(fresh, { onConflict: "url", ignoreDuplicates: false }); if (error) dbError = error.message; }
+  // Purge anything stored earlier that does not pass the NYC real estate screen.
+  const { data: stored } = await admin.from("news_items").select("id,title,excerpt,source_name").limit(1000);
+  const drop = (stored ?? []).filter(r => !isRelevant(r.title, r.excerpt, r.source_name)).map(r => r.id);
+  if (drop.length) await admin.from("news_items").delete().in("id", drop);
   await admin.from("news_items").delete().lt("fetched_at", new Date(Date.now() - 30 * 864e5).toISOString());
   return json({ stored: dbError ? 0 : fresh.length, status, dbError });
 });

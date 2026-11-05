@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { SourceTag } from "../components/Disclaimers";
+import { isRelevant } from "../../supabase/functions/_shared/relevance";
 interface Item { id: string; url: string; title: string; source_name: string; published_at: string | null; excerpt: string | null; topics: string[]; score: number; fetched_at: string; }
 const STALE_MS = 6 * 3600 * 1000;
 
@@ -8,8 +9,8 @@ export default function News() {
   const [items, setItems] = useState<Item[] | null>(null); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
   const [sources, setSources] = useState<Record<string, string> | null>(null);
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from("news_items").select("*").gte("published_at", new Date(Date.now() - 14 * 864e5).toISOString()).order("score", { ascending: false }).limit(40);
-    if (error) { setErr(error.message); return null; } setErr(""); setItems(data as Item[]); return data as Item[];
+    const { data, error } = await supabase.from("news_items").select("*").gte("published_at", new Date(Date.now() - 14 * 864e5).toISOString()).order("score", { ascending: false }).limit(150);
+    if (error) { setErr(error.message); return null; } setErr(""); const ok = (data as Item[]).filter(i => isRelevant(i.title, i.excerpt, i.source_name)).slice(0, 40); setItems(ok); return ok;
   }, []);
   const refresh = useCallback(async () => {
     setBusy(true);
@@ -21,6 +22,7 @@ export default function News() {
   const newest = items?.length ? new Date(Math.max(...items.map(i => new Date(i.fetched_at).getTime()))) : null;
   return (<><div className="row" style={{ alignItems: "center" }}><div><p className="eyebrow">NYC real estate</p><h1>News</h1></div><button className="ghost" onClick={refresh} disabled={busy}>{busy ? "Refreshing…" : "Refresh"}</button></div>
     <SourceTag id="news" asOf={newest ? newest.toISOString() : null} />
+    <p className="note">Filtered to stories about New York City real estate. Everything else is hidden.</p>
     {err && <p className="err">{err}</p>}
     {failed.length > 0 && <p className="note">{sources && Object.keys(sources).length - failed.length} of {sources && Object.keys(sources).length} sources responded. Unavailable: {failed.map(([k]) => k).join(", ")}.</p>}
     {items && items.length === 0 && !busy && <div className="card">No news yet. The sources may be unreachable right now. Nothing is invented here.</div>}

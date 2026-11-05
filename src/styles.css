@@ -85,3 +85,12 @@ input,select,textarea{border-radius:6px}
 .authbox form{text-align:left;margin:0}.authbox form p:last-child{display:flex;gap:8px;flex-wrap:wrap}
 body:has(.authwrap) footer.disc,body:has(.legal) footer.disc{left:0}
 .authwrap{padding-bottom:90px}
+.psearch{position:relative;margin:0 0 18px}
+.psearch input{background:#1d1d1d;border:1px solid #333;color:#fff;border-radius:6px;padding:9px 12px;font-size:14px}
+.psearch input::placeholder{color:#8a8a8a}.psearch input:focus{border-color:#fff;outline:0}
+.pres{position:absolute;left:0;right:0;top:calc(100% + 6px);background:#fff;color:#111;border-radius:8px;box-shadow:0 12px 30px #0006;z-index:30;overflow:hidden}
+.pres button{all:unset;box-sizing:border-box;display:block;width:100%;padding:10px 12px;cursor:pointer;border-bottom:1px solid #eee}.pres button:hover{background:#f3f3f3}
+.pres b{display:block;font-size:14px}.pres span{display:block;font-size:12px;color:#777}
+.pnone{padding:12px;font-size:13px;color:#555}.pnone a{color:#0039a6;font-weight:600}
+.lsearch{margin:14px 0 0;max-width:340px}
+@media(max-width:860px){.psearch{flex:1 1 100%;order:5;margin:8px 0 0}}

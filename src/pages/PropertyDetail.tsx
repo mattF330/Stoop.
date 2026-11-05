@@ -4,6 +4,7 @@ import { getProperty, listFor, insertRow, deleteRow, updateRow, toLoan, EXPENSE_
 import { propertyMetrics, loanStatus, fmtMoney } from "../lib/finance";
 import { supabase } from "../lib/supabase";
 import { relevantNews, NewsLite } from "../lib/alerts";
+import { isRelevant } from "../../supabase/functions/_shared/relevance";
 import { SourceTag, SectionNote, EstimateBadge } from "../components/Disclaimers";
 
 type Tab = "overview" | "debt" | "costs" | "units";
@@ -82,7 +83,7 @@ function UnitForm({ onAdd }: { onAdd: (v: any) => void }) {
 
 function RelatedNews({ p, units, hasLoans }: { p: PropertyRow; units: number; hasLoans: boolean }) {
   const [items, setItems] = useState<NewsLite[]>([]);
-  useEffect(() => { supabase.from("news_items").select("*").order("published_at", { ascending: false }).limit(60).then(({ data }) => setItems((data as NewsLite[]) ?? [])); }, []);
+  useEffect(() => { supabase.from("news_items").select("*").order("published_at", { ascending: false }).limit(120).then(({ data }) => setItems(((data as NewsLite[]) ?? []).filter(n => isRelevant(n.title, n.excerpt, n.source_name)))); }, []);
   const rel = relevantNews({ borough: p.borough, address: p.address, units: p.units_residential ?? units, hasLoans }, items);
   if (!rel.length) return null;
   return <div className="card"><h2>News that may matter here</h2>{rel.map(({ n, why }) => <p key={n.id}><a href={n.url} target="_blank" rel="noopener noreferrer">{n.title}</a><br /><span style={{ color: "var(--muted)", fontSize: ".82rem" }}>{n.source_name} · {why}</span></p>)}

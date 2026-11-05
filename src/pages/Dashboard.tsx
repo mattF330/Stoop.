@@ -5,6 +5,7 @@ import { propertyMetrics, portfolioTotals, fmtMoney } from "../lib/finance";
 import { toCsv } from "../lib/csv";
 import { loadPrefs, Prefs } from "../lib/prefs";
 import { EstimateBadge } from "../components/Disclaimers";
+import { matchProps } from "../components/PropertySearch";
 
 const LINE: Record<string, [string, string]> = { manhattan: ["M", "#EE352E"], brooklyn: ["K", "#FF6319"], queens: ["Q", "#B933AD"], bronx: ["Bx", "#00933C"], "staten island": ["S", "#0039A6"] };
 const lineFor = (b: string | null) => LINE[(b ?? "").toLowerCase()] ?? ["•", "#6D6E71"];
@@ -13,7 +14,7 @@ const short = (n: number) => { const a = Math.abs(n); const s = a >= 1e6 ? (a / 
 export default function Dashboard() {
   const [props, setProps] = useState<PropertyRow[] | null>(null); const [err, setErr] = useState("");
   const [rows, setRows] = useState<{ p: PropertyRow; m: ReturnType<typeof propertyMetrics> }[]>([]);
-  const [prefs, setPrefs] = useState<Prefs>(loadPrefs());
+  const [filter, setFilter] = useState(""); const [prefs, setPrefs] = useState<Prefs>(loadPrefs());
   useEffect(() => { const f = () => setPrefs(loadPrefs()); window.addEventListener("stoop-prefs", f); return () => window.removeEventListener("stoop-prefs", f); }, []);
   useEffect(() => { (async () => {
     try {
@@ -43,7 +44,9 @@ export default function Dashboard() {
     </div>}
     <div className="row" style={{ alignItems: "center", marginTop: props.length ? 0 : 40 }}><h2 className="lines" style={{ margin: 0 }}>Your lines</h2>
       {props.length > 0 && <button className="ghost" onClick={exportCsv}>Export CSV</button>}<Link to="/add" className="btn" style={{ textDecoration: "none" }}>Add property</Link></div>
-    <div className="list" style={{ marginTop: 14 }}>{rows.map(({ p, m }) => <Link key={p.id} to={`/property/${p.id}`} className="item">
+    {props.length > 0 && <input className="lsearch" aria-label="Search your properties" placeholder="Search your properties" value={filter} onChange={e => setFilter(e.target.value)} />}
+    {filter.trim() && matchProps(props, filter).length === 0 && <p className="note">No properties match “{filter}”.</p>}
+    <div className="list" style={{ marginTop: 14 }}>{rows.filter(({ p }) => !filter.trim() || matchProps([p], filter).length > 0).map(({ p, m }) => <Link key={p.id} to={`/property/${p.id}`} className="item">
       <div className="bul" style={{ background: lineFor(p.borough)[1] }}>{lineFor(p.borough)[0]}</div><div><div className="name">{p.nickname || p.address}</div><div className="addr">{p.address}</div></div>
       <div className="n h">{prefs.showNoi ? <>{fmtMoney(m.noi)}<small>NOI</small></> : null}</div>
       <div className="n h">{prefs.showCap ? <>{m.capRate.toFixed(1)}%<small>Cap rate</small></> : null}</div>

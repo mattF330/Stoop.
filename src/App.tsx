@@ -11,6 +11,7 @@ import News from "./pages/News";
 import Settings from "./pages/Settings";
 import MapPage from "./map/MapPage";
 import Legal from "./pages/Legal";
+import PropertySearch from "./components/PropertySearch";
 
 const BULLET = ["#B933AD", "#00933C", "#EE352E", "#0039A6", "#6D6E71"];
 
@@ -26,6 +27,7 @@ export default function App() {
     <div className="app">
       <aside>
         <div className="logo"><i>R</i>Rambl</div><div className="logo-sub">NYC rental portfolio</div>
+        <PropertySearch />
         {link("/", 1, "Portfolio", true)}{link("/map", 2, "Map")}{link("/news", 3, "News")}{link("/calculators", 4, "Calculators")}{link("/settings", 5, "Settings")}
         <div className="spacer" />
         {demo && <div className="note" style={{ margin: 0, padding: "0 12px" }}><strong>Demo mode</strong>: fictional sample data stored in this browser only.</div>}

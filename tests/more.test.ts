@@ -28,3 +28,18 @@ describe("demo client", () => {
   });
   it("duplicate terms rejected", async () => { const c = createDemoClient(); const row = { user_id: "u", terms_version: "v" }; await c.from("terms_acceptances").insert(row); expect((await c.from("terms_acceptances").insert(row)).error).toBeTruthy(); });
 });
+import { isRelevant } from "../supabase/functions/_shared/relevance";
+describe("news relevance screen", () => {
+  it("keeps NYC real estate", () => {
+    expect(isRelevant("Rent board schedules vote on stabilized increases", "", "City Limits")).toBe(true);
+    expect(isRelevant("Brooklyn landlord fined over heat violations", null)).toBe(true);
+    expect(isRelevant("New developer plans tower on Hudson Yards site", "Zoning approved", "Gothamist")).toBe(true);
+  });
+  it("drops unrelated or non-NYC stories", () => {
+    expect(isRelevant("Mets fall in extra innings", "Baseball recap", "Gothamist")).toBe(false);
+    expect(isRelevant("Subway delays on the L train", "", "THE CITY")).toBe(false);
+    expect(isRelevant("Chicago landlord sued by tenants", "", "Other Outlet")).toBe(false);
+    expect(isRelevant("Current parent company different plan", "", "Gothamist")).toBe(false);
+  });
+});
+describe("relevance edge", () => { it("'a lot of' is not real estate", () => expect(isRelevant("A lot of people ride the bus", "", "Gothamist")).toBe(false)); });
