@@ -6,6 +6,7 @@ import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import AddProperty from "./pages/AddProperty";
 import UpdateBar from "./components/UpdateBar";
+import { SideStats, SideAccount } from "./components/SideExtras";
 import PropertyDetail from "./pages/PropertyDetail";
 import Calculators from "./pages/Calculators";
 import News from "./pages/News";
@@ -29,7 +30,9 @@ export default function App() {
       <aside>
         <div className="logo"><i>R</i>Rambl</div><div className="logo-sub">NYC rental portfolio</div>
         {link("/", 1, "Portfolio", true)}{link("/add", 2, "Search properties")}{link("/map", 3, "Map")}{link("/news", 4, "News")}{link("/calculators", 5, "Calculators")}{link("/settings", 6, "Settings")}
+        <SideStats />
         <div className="spacer" />
+        <SideAccount />
         {demo && <div className="note" style={{ margin: 0, padding: "0 12px" }}><strong>Demo mode</strong>: fictional sample data stored in this browser only.</div>}
       </aside>
       <div><UpdateBar /><main className="wrap"><Routes>

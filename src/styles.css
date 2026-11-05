@@ -110,3 +110,21 @@ h2.lines{border-left:5px solid var(--accent);padding-left:10px}
 .eyebrow{color:var(--accent)}
 .authlogo i{background:var(--accent)}
 .band{position:relative}.band:after{content:"";position:absolute;left:-100vmax;right:-100vmax;bottom:0;height:6px;background:var(--accent)}
+
+/* Sidebar extras */
+.sx{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+aside a.sx-add{justify-content:center;background:var(--accent);color:#fff;border-radius:99px;padding:10px 14px;font-size:14px}aside a.sx-add:hover{background:var(--accent);color:#fff;filter:brightness(1.1)}
+.sx-card{border:1px solid #2c2c2c;border-radius:10px;padding:12px 14px;background:#161616}
+.sx-h{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9a;font-weight:700;margin-bottom:6px}
+.sx-r{display:flex;justify-content:space-between;gap:10px;padding:5px 0;font-size:13px;color:#cfcfcf;border-top:1px solid #242424}.sx-r:first-of-type{border-top:0}.sx-r b{color:#fff}
+.sx-n{font-size:10.5px;color:#7d7d7d;margin-top:6px}
+.sx-acct{border-top:1px solid #2c2c2c;padding-top:14px;margin-top:10px;display:flex;flex-direction:column;gap:10px}
+.sx-who{display:flex;gap:10px;align-items:center;min-width:0}.sx-who i{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font:700 15px Helvetica,Arial,sans-serif;font-style:normal;flex:none}
+.sx-who>div{min-width:0}.sx-em{font-size:13px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sx-who a,.sx-links a{color:#9a9a9a;font-size:12px;text-decoration:none;padding:0;display:inline;background:none}.sx-who a:hover,.sx-links a:hover{color:#fff;text-decoration:underline;background:none}
+.sx-links{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#7d7d7d}
+.sx-links button{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:#fff;border:1px solid #444;border-radius:99px;padding:4px 12px}.sx-links button:hover{background:#222}
+@media(max-width:860px){.sx,.sx-acct{display:none}}
+aside{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent}
+@media(max-height:860px){.sx-card .sx-r:nth-of-type(n+4),.sx-card .sx-n{display:none}}
+@media(max-height:700px){.sx-card{display:none}}
