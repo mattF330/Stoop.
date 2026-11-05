@@ -37,7 +37,6 @@ export function SideStats() {
       <div className="sx-r"><span>Property value</span><b>{money(s.value)}</b></div>
       <div className="sx-r"><span>Debt</span><b>{money(s.debt)}</b></div>
       <div className="sx-r"><span>Cash flow{cfm ? " /mo" : " /yr"}</span><b>{money(cfm ? s.cash / 12 : s.cash)}</b></div>
-      <div className="sx-r"><span>Monthly rent</span><b>{money(s.rent)}</b></div>
       <div className="sx-n">Calculated from numbers you entered. May not be exact.</div></div>}
   </div>);
 }
