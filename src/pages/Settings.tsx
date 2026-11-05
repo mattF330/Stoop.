@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
@@ -29,7 +30,7 @@ export default function Settings() {
   const [i, setI] = useState(0); const [prefs, setPrefs] = useState<Prefs>(loadPrefs()); const [msg, setMsg] = useState("");
   const [name, setName] = useState(""); const [phone, setPhone] = useState<string>(String(user.user_metadata?.phone ?? ""));
   const [pw, setPw] = useState({ a: "", b: "" }); const [email, setEmail] = useState(user.email ?? "");
-  const [props, setProps] = useState<PropertyRow[]>([]); const [pick, setPick] = useState(""); const [legal, setLegal] = useState<string | null>(null);
+  const [props, setProps] = useState<PropertyRow[]>([]); const [pick, setPick] = useState("");
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(""), 3500); };
   useEffect(() => { supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle().then(({ data }) => setName((data as any)?.display_name ?? "")); listProperties().then(p => { setProps(p); setPick(p[0]?.id ?? ""); }).catch(() => {}); }, [user.id]);
   const setP = (patch: Partial<Prefs>) => { const n = { ...prefs, ...patch }; setPrefs(n); savePrefs(n); if (patch.theme && patch.theme !== "system") supabase.from("profiles").update({ theme: patch.theme }).eq("id", user.id).then(() => {}); };
@@ -52,7 +53,7 @@ export default function Settings() {
   const delOne = async () => { await deleteRow("properties", pick); const p = await listProperties(); setProps(p); setPick(p[0]?.id ?? ""); flash("Property data deleted"); };
   const delAll = async () => { for (const p of props) await deleteRow("properties", p.id); setProps([]); setPick(""); flash("Portfolio deleted"); };
 
-  const LEGAL: Record<string, string> = { "Terms of Service": "Placeholder: Terms of Service will be added before launch.", "Privacy Policy": "Placeholder: the Privacy Policy will explain what Stoop stores and how to delete it.", "Financial Disclaimer": GLOBAL_DISCLAIMER };
+  const LEGAL: Record<string, string> = { "Terms of Service": "terms", "Privacy Policy": "privacy", "Data sources & disclaimers": "data-sources" };
 
   const pane = [
     <>{/* Account */}
@@ -81,7 +82,7 @@ export default function Settings() {
       <Row title="Log out of all devices" desc="Ends every session, including this one"><button className="ghost sm" onClick={() => supabase.auth.signOut({ scope: "global" })}>Log out everywhere</button></Row>
       <Row title="Download account data" desc="Your profile, properties, loans, costs and units as JSON"><button className="ghost sm" onClick={downloadData}>Download</button></Row>
       <Row title="Delete account" desc="See Danger zone"><button className="ghost sm" onClick={() => setI(7)}>Go to Danger zone</button></Row></>,
-    <>{Object.keys(LEGAL).map(k => <Row key={k} title={k}><button className="ghost sm" onClick={() => setLegal(k)}>Read</button></Row>)}
+    <>{Object.keys(LEGAL).map(k => <Row key={k} title={k}><Link to={`/legal/${LEGAL[k]}`}><button className="ghost sm">Read</button></Link></Row>)}
       <Row title="Contact support" desc="Placeholder"><button className="ghost sm" disabled>Contact</button></Row>
       <Row title="Report a problem" desc="Placeholder"><button className="ghost sm" disabled>Report</button></Row>
       <Row title="App version">Stoop {VERSION}</Row>
@@ -97,6 +98,5 @@ export default function Settings() {
   return (<><p className="eyebrow">Account</p><h1>Settings</h1>
     <div className="setwrap" style={{ marginTop: 28 }}>
       <nav className="snav">{SECTIONS.map((s, k) => <button key={s} className={(k === i ? "on " : "") + (k === 7 ? "dz" : "")} onClick={() => setI(k)}>{s}</button>)}</nav>
-      <div><h2 style={{ marginBottom: 6 }}>{SECTIONS[i]}</h2>{msg && <p className="ok" role="status">{msg}</p>}{pane[i]}</div></div>
-    {legal && <div className="modal" onClick={() => setLegal(null)}><div className="card" onClick={e => e.stopPropagation()}><h2>{legal}</h2><p>{LEGAL[legal]}</p><button onClick={() => setLegal(null)}>Close</button></div></div>}</>);
+      <div><h2 style={{ marginBottom: 6 }}>{SECTIONS[i]}</h2>{msg && <p className="ok" role="status">{msg}</p>}{pane[i]}</div></div></>);
 }

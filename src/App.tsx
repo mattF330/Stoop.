@@ -1,4 +1,4 @@
-import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import { demo } from "./lib/supabase";
 import { DisclaimerGate, Footer } from "./components/Disclaimers";
@@ -10,6 +10,7 @@ import Calculators from "./pages/Calculators";
 import News from "./pages/News";
 import Settings from "./pages/Settings";
 import MapPage from "./map/MapPage";
+import Legal from "./pages/Legal";
 
 const I = (d: string) => <svg viewBox="0 0 24 24"><path d={d} /></svg>;
 const ICON = {
@@ -22,6 +23,9 @@ const ICON = {
 
 export default function App() {
   const { session, loading } = useAuth();
+  const loc = useLocation();
+  // Legal pages are readable by anyone, including before signing in or accepting the terms.
+  if (loc.pathname.startsWith("/legal/")) return <><Routes><Route path="/legal/:doc" element={<Legal />} /></Routes><Footer /></>;
   if (loading) return <div className="wrap">Loading…</div>;
   if (!session) return <><AuthPage /><Footer /></>;
   const link = (to: string, icon: JSX.Element, label: string, end = false) => <NavLink to={to} end={end} className={({ isActive }) => (isActive ? "active" : "")}>{icon}{label}</NavLink>;
