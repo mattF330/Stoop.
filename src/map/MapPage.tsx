@@ -58,7 +58,7 @@ export default function MapPage() {
     };
     addPin.current = (p, pt) => {
       const pop = new maplibregl.Popup({ offset: 14, closeButton: false }).setHTML(`<strong>${esc(p.nickname || p.address)}</strong><br/><span style="color:#667">${esc(p.address)}</span><br/><a href="#/property/${encodeURIComponent(p.id)}">Open property →</a><br/><span style="color:#667">${pt.approx ? "Placed on the street (approximate). " : ""}Double-click the pin, then drag it to the exact spot.</span>`);
-      const m = new maplibregl.Marker({ color: pt.approx ? "#F59E0B" : "#2F5BFF" }).setLngLat([pt.lng, pt.lat]).setPopup(pop).addTo(map);
+      const m = new maplibregl.Marker({ color: pt.approx ? "#F59E0B" : "#0039A6" }).setLngLat([pt.lng, pt.lat]).setPopup(pop).addTo(map);
       m.getElement().style.cursor = "pointer";
       m.getElement().addEventListener("dblclick", ev => { ev.stopPropagation(); m.setDraggable(true); m.getElement().style.cursor = "grab"; setStatus(`Drag ${p.nickname || p.address} to its exact location`); });
       m.on("dragend", () => { const l = m.getLngLat(); m.setDraggable(false); m.getElement().style.cursor = "pointer"; save(p, { lng: l.lng, lat: l.lat }); });

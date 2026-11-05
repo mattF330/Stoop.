@@ -6,6 +6,8 @@ import { toCsv } from "../lib/csv";
 import { loadPrefs, Prefs } from "../lib/prefs";
 import { EstimateBadge } from "../components/Disclaimers";
 
+const LINE: Record<string, [string, string]> = { manhattan: ["M", "#EE352E"], brooklyn: ["K", "#FF6319"], queens: ["Q", "#B933AD"], bronx: ["Bx", "#00933C"], "staten island": ["S", "#0039A6"] };
+const lineFor = (b: string | null) => LINE[(b ?? "").toLowerCase()] ?? ["•", "#6D6E71"];
 const short = (n: number) => { const a = Math.abs(n); const s = a >= 1e6 ? (a / 1e6).toFixed(2) + "M" : a >= 1e3 ? Math.round(a / 1e3) + "k" : String(Math.round(a)); return (n < 0 ? "−" : "") + "$" + s; };
 
 export default function Dashboard() {
@@ -30,19 +32,19 @@ export default function Dashboard() {
   const exportCsv = () => { const csv = toCsv(rows.map(({ p, m }) => ({ address: p.address, bbl: p.bbl, noi: Math.round(m.noi), cash_flow: Math.round(m.cashFlow), debt_balance_est: Math.round(m.balance), equity_est: Math.round(m.equity), cap_rate_pct: m.capRate.toFixed(2) })));
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "stoop-portfolio.csv"; a.click(); };
   return (<>
-    <h2 style={{ color: "var(--muted)", fontWeight: 500, fontSize: 15 }}>Estimated equity</h2>
+    <div className="band"><div className="lbl">Estimated equity</div>
     <p className="hero">{fmtMoney(t.equity)}</p>
-    <p className="sub">{props.length === 0 ? "No properties yet. Add one you own." : <>Across {props.length} propert{props.length === 1 ? "y" : "ies"} · calculated from numbers you entered<EstimateBadge /></>}</p>
+    <p className="sub">{props.length === 0 ? "No properties yet. Add one you own." : <>Across {props.length} propert{props.length === 1 ? "y" : "ies"} · calculated from numbers you entered<EstimateBadge /></>}</p></div>
     {props.length > 0 && <div className="stats">
       <div className="s"><div className="l">Property value</div><div className="v">{short(t.value)}</div></div>
       <div className="s"><div className="l">Debt (calculated)</div><div className="v">{short(t.debt)}</div></div>
       <div className="s"><div className="l">Annual NOI</div><div className="v">{short(t.noi)}</div></div>
       <div className="s"><div className="l">Cash flow / {monthly ? "mo" : "yr"}</div><div className={"v " + (t.cashFlow >= 0 ? "good" : "bad")}>{t.cashFlow > 0 ? "+" : ""}{short(cf(t.cashFlow))}</div></div>
     </div>}
-    <div className="row" style={{ alignItems: "center", marginTop: props.length ? 0 : 40 }}><h2 style={{ margin: 0 }}>Properties</h2>
+    <div className="row" style={{ alignItems: "center", marginTop: props.length ? 0 : 40 }}><h2 className="lines" style={{ margin: 0 }}>Your lines</h2>
       {props.length > 0 && <button className="ghost" onClick={exportCsv}>Export CSV</button>}<Link to="/add" className="btn" style={{ textDecoration: "none" }}>Add property</Link></div>
     <div className="list" style={{ marginTop: 14 }}>{rows.map(({ p, m }) => <Link key={p.id} to={`/property/${p.id}`} className="item">
-      <div><div className="name">{p.nickname || p.address}</div><div className="addr">{p.address}</div></div>
+      <div className="bul" style={{ background: lineFor(p.borough)[1] }}>{lineFor(p.borough)[0]}</div><div><div className="name">{p.nickname || p.address}</div><div className="addr">{p.address}</div></div>
       <div className="n h">{prefs.showNoi ? <>{fmtMoney(m.noi)}<small>NOI</small></> : null}</div>
       <div className="n h">{prefs.showCap ? <>{m.capRate.toFixed(1)}%<small>Cap rate</small></> : null}</div>
       <div className={"n " + (m.cashFlow >= 0 ? "good" : "bad")}>{m.cashFlow > 0 ? "+" : ""}{fmtMoney(cf(m.cashFlow))}<small>Cash flow / {monthly ? "mo" : "yr"}</small></div><span style={{ color: "var(--muted)" }}>›</span></Link>)}</div>
