@@ -10,7 +10,7 @@ export default function AuthPage() {
     setBusy(false);
     if (r.error) setMsg(r.error.message); else if (mode === "up" && !r.data.session) setMsg("Check your email to confirm your account, then sign in.");
   };
-  return (<div className="wrap" style={{ maxWidth: 420 }}><h1 className="wordmark">Stoop.</h1><p>Your NYC rental portfolio, with the public record alongside.</p>
+  return (<div className="wrap" style={{ maxWidth: 420 }}><h1>Stoop</h1><p>Your NYC rental portfolio, with the public record alongside.</p>
     <form className="card" onSubmit={submit}><label>Email<input type="email" value={email} onChange={e => setEmail(e.target.value)} required /></label>
       <label>Password<input type="password" minLength={8} value={password} onChange={e => setPassword(e.target.value)} required /></label>
       {mode === "up" && <p className="note">By creating an account you agree to the <Link to="/legal/terms">Terms of Service</Link> and <Link to="/legal/privacy">Privacy Policy</Link>.</p>}
