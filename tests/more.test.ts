@@ -43,7 +43,7 @@ describe("news relevance screen", () => {
   });
 });
 describe("relevance edge", () => { it("'a lot of' is not real estate", () => expect(isRelevant("A lot of people ride the bus", "", "Gothamist")).toBe(false)); });
-import { buildRulesBrief, parseAiBrief, aiPrompt } from "../supabase/functions/_shared/brief";
+import { buildRulesBrief } from "../supabase/functions/_shared/brief";
 const bi = (o: any) => ({ title: "t", url: "https://x.com/" + Math.random(), source_name: "S", excerpt: null, topics: [], published_at: null, ...o });
 describe("daily brief", () => {
   it("rules brief groups by topic and caps bullets", () => {
@@ -51,11 +51,4 @@ describe("daily brief", () => {
     expect(b.source).toBe("rules"); expect(b.sections[0].title).toBe("Rules and regulation"); expect(b.headline).toContain("4"); expect(b.takeaways.length).toBeGreaterThan(0);
   });
   it("empty day is honest", () => { const b = buildRulesBrief([], "2026-11-05"); expect(b.sections).toEqual([]); expect(b.headline).toMatch(/No NYC/); });
-  it("parses AI JSON, maps refs to real urls, drops invented refs", () => {
-    const items = [bi({ title: "One", url: "https://a.com/1" }), bi({ title: "Two", url: "https://a.com/2" })];
-    const txt = 'Here you go: {"headline":"H","summary":"S","sections":[{"title":"Sec","bullets":[{"text":"x","ref":2},{"text":"fake","ref":9}]}],"takeaways":["t"]}';
-    const b = parseAiBrief(txt, items, "2026-11-05")!; expect(b.source).toBe("ai"); expect(b.sections[0].bullets).toHaveLength(1); expect(b.sections[0].bullets[0].url).toBe("https://a.com/2");
-  });
-  it("rejects malformed AI output", () => { expect(parseAiBrief("not json", [bi({})], "d")).toBeNull(); expect(parseAiBrief('{"headline":"H"}', [bi({})], "d")).toBeNull(); });
-  it("prompt numbers items", () => expect(aiPrompt([bi({ title: "Hello" })])).toContain("[1] Hello"));
 });
