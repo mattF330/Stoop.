@@ -1,6 +1,6 @@
 // Local (per-browser) display preferences. Account-level settings live in Supabase.
-export interface Prefs { theme: "light" | "dark" | "system"; accent: string; density: "comfortable" | "compact"; cf: "monthly" | "annual"; showNoi: boolean; showCap: boolean; }
-export const DEFAULT_PREFS: Prefs = { theme: "light", accent: "#0039A6", density: "comfortable", cf: "monthly", showNoi: true, showCap: true };
+export interface Prefs { theme: "light" | "dark" | "system"; accent: string; density: "comfortable" | "compact"; cf: "monthly" | "annual"; showNoi: boolean; showCap: boolean; showBar: boolean; }
+export const DEFAULT_PREFS: Prefs = { theme: "light", accent: "#0039A6", density: "comfortable", cf: "monthly", showNoi: true, showCap: true, showBar: true };
 const KEY = "stoop-prefs-v1";
 export function loadPrefs(): Prefs { try { const v = { ...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; if (v.accent === "#2F5BFF") v.accent = DEFAULT_PREFS.accent; return v; } catch { return DEFAULT_PREFS; } }
 export function savePrefs(p: Prefs) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch { /* ignore */ } applyPrefs(p); window.dispatchEvent(new Event("stoop-prefs")); }

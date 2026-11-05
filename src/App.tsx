@@ -5,6 +5,7 @@ import { DisclaimerGate, Footer } from "./components/Disclaimers";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import AddProperty from "./pages/AddProperty";
+import UpdateBar from "./components/UpdateBar";
 import PropertyDetail from "./pages/PropertyDetail";
 import Calculators from "./pages/Calculators";
 import News from "./pages/News";
@@ -31,7 +32,7 @@ export default function App() {
         <div className="spacer" />
         {demo && <div className="note" style={{ margin: 0, padding: "0 12px" }}><strong>Demo mode</strong>: fictional sample data stored in this browser only.</div>}
       </aside>
-      <div><main className="wrap"><Routes>
+      <div><UpdateBar /><main className="wrap"><Routes>
         <Route path="/" element={<Dashboard />} /><Route path="/add" element={<AddProperty />} /><Route path="/property/:id" element={<PropertyDetail />} />
         <Route path="/map" element={<MapPage />} /><Route path="/news" element={<News />} /><Route path="/calculators" element={<Calculators />} /><Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" />} /></Routes></main></div>

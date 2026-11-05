@@ -86,3 +86,19 @@ input,select,textarea{border-radius:6px}
 body:has(.authwrap) footer.disc,body:has(.legal) footer.disc{left:0}
 .authwrap{padding-bottom:90px}
 .lsearch{margin:14px 0 0;max-width:340px}
+
+/* Updates bar (yellow ticker) */
+.ubar{position:sticky;top:0;z-index:2;display:flex;align-items:stretch;height:34px;background:#FCCC0A;color:#111;overflow:hidden;font-size:13px;font-weight:700}
+.ubar .lab{display:flex;align-items:center;gap:7px;padding:0 14px;background:#111;color:#FCCC0A;letter-spacing:.1em;text-transform:uppercase;font-size:11px;flex:none;cursor:help}
+.ubar .lab:before{content:"";width:8px;height:8px;border-radius:50%;background:#FCCC0A;animation:ubpulse 1.6s infinite}
+@keyframes ubpulse{50%{opacity:.25}}
+.ubar .win{flex:1;overflow:hidden;display:flex;align-items:center}
+.ubar .trk{display:inline-flex;white-space:nowrap;animation:ubmove 70s linear infinite}
+.ubar:hover .trk{animation-play-state:paused}
+@keyframes ubmove{to{transform:translateX(-50%)}}
+.ubar .it{display:inline-flex;align-items:center;gap:7px;padding:0 34px 0 0;color:#111;text-decoration:none}
+.ubar .it:hover{text-decoration:underline}
+.ubar .it b{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;color:#fff;font:700 10px Helvetica,Arial,sans-serif;flex:none}
+.ubar .gap{width:1px}
+.ubar .x{all:unset;cursor:pointer;padding:0 12px;font-size:18px;display:flex;align-items:center}.ubar .x:hover{background:rgba(0,0,0,.08)}
+@media(prefers-reduced-motion:reduce){.ubar .trk{animation:none}.ubar .win{overflow-x:auto}.ubar .lab:before{animation:none}}
