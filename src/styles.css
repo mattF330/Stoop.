@@ -86,10 +86,3 @@ input,select,textarea{border-radius:6px}
 body:has(.authwrap) footer.disc,body:has(.legal) footer.disc{left:0}
 .authwrap{padding-bottom:90px}
 .lsearch{margin:14px 0 0;max-width:340px}
-.brief{position:relative;border:2px solid #111;border-radius:10px;padding:20px 24px 18px;margin:18px 0 8px;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.12);animation:briefIn .35s ease-out}
-@keyframes briefIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
-.brief-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}.brief-badge{background:#111;color:#fff;border-radius:99px;padding:2px 10px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-.brief-date{color:var(--muted);font-size:13px}.brief-x{all:unset;margin-left:auto;cursor:pointer;font-size:24px;line-height:1;padding:2px 8px;color:var(--muted)}.brief-x:hover{color:var(--ink)}
-.brief-h{font-size:22px;margin:6px 0 4px}.brief-sec h3{font-size:12px;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 4px}
-.brief ul{margin:0;padding-left:18px}.brief li{margin:4px 0}.brief-src{color:var(--muted);font-size:12px}
-:root[data-theme=dark] .brief{border-color:#F2F2F2}:root[data-theme=dark] .brief-badge{background:#F2F2F2;color:#111}

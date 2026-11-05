@@ -64,7 +64,6 @@ class Query implements PromiseLike<{ data: any; error: { message: string } | nul
 }
 
 function invoke(_name: string, opts: { body: any }) {
-  if (_name === "news-brief") return Promise.resolve({ data: { date: new Date().toISOString().slice(0, 10), source: "rules", headline: "[Sample] 3 NYC real estate stories to know today", summary: "Placeholder briefing for previewing the layout. Not real news.", sections: [{ title: "Rules and regulation", bullets: [{ text: "[Sample] Rent board schedules preliminary vote", url: "https://example.com/sample-1", source: "Sample feed" }] }, { title: "Market", bullets: [{ text: "[Sample] Brooklyn multifamily sales climb", url: "https://example.com/sample-2", source: "Sample feed" }] }], takeaways: ["Sample takeaway: rules news may affect what you can charge."] }, error: null });
   const b = opts.body ?? {};
   if (b.mode === "search") {
     const t = String(b.text ?? "").trim();

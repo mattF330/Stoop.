@@ -43,12 +43,3 @@ describe("news relevance screen", () => {
   });
 });
 describe("relevance edge", () => { it("'a lot of' is not real estate", () => expect(isRelevant("A lot of people ride the bus", "", "Gothamist")).toBe(false)); });
-import { buildRulesBrief } from "../supabase/functions/_shared/brief";
-const bi = (o: any) => ({ title: "t", url: "https://x.com/" + Math.random(), source_name: "S", excerpt: null, topics: [], published_at: null, ...o });
-describe("daily brief", () => {
-  it("rules brief groups by topic and caps bullets", () => {
-    const b = buildRulesBrief([bi({ title: "A", topics: ["regulation"] }), bi({ title: "B", topics: ["regulation"] }), bi({ title: "C", topics: ["market"] }), bi({ title: "D" })], "2026-11-05");
-    expect(b.source).toBe("rules"); expect(b.sections[0].title).toBe("Rules and regulation"); expect(b.headline).toContain("4"); expect(b.takeaways.length).toBeGreaterThan(0);
-  });
-  it("empty day is honest", () => { const b = buildRulesBrief([], "2026-11-05"); expect(b.sections).toEqual([]); expect(b.headline).toMatch(/No NYC/); });
-});
