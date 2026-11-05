@@ -8,6 +8,8 @@ import { searchAddress } from "../lib/api";
 
 const STYLE = "https://tiles.openfreemap.org/styles/positron"; // free vector tiles, no API key
 const NYC: [number, number] = [-73.95, 40.72];
+// NYC and the surrounding area only: keeps the map from wandering off to the rest of the world.
+const AREA: [[number, number], [number, number]] = [[-74.7, 40.25], [-73.0, 41.15]];
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
 type Pt = { lng: number; lat: number; approx?: boolean };
@@ -46,7 +48,7 @@ export default function MapPage() {
 
   useEffect(() => {
     if (!el.current) return;
-    const map = new maplibregl.Map({ container: el.current, style: STYLE, center: NYC, zoom: 10.5, attributionControl: { compact: true } });
+    const map = new maplibregl.Map({ container: el.current, style: STYLE, center: NYC, zoom: 10.5, minZoom: 8.5, maxBounds: AREA, attributionControl: { compact: true } });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     let dead = false;

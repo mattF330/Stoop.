@@ -1,13 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getProperty, listFor, insertRow, deleteRow, updateRow, toLoan, EXPENSE_CATEGORIES, PropertyRow, LoanRow, ExpenseRow, UnitRow } from "../lib/data";
-import { lookupBBL, Bundle } from "../lib/api";
 import { propertyMetrics, loanStatus, fmtMoney } from "../lib/finance";
 import { supabase } from "../lib/supabase";
 import { relevantNews, NewsLite } from "../lib/alerts";
 import { SourceTag, SectionNote, EstimateBadge } from "../components/Disclaimers";
 
-type Tab = "overview" | "records" | "debt" | "costs" | "units";
+type Tab = "overview" | "debt" | "costs" | "units";
 const uid = async () => (await supabase.auth.getUser()).data.user!.id;
 
 export default function PropertyDetail() {
@@ -24,7 +23,7 @@ export default function PropertyDetail() {
 
   return (<>
     <h1>{p.nickname || p.address}</h1><div className="sub" style={{ marginTop: 0 }}>{p.address}{p.bbl && ` · BBL ${p.bbl}`}</div>
-    <div className="seg">{(["overview", "records", "debt", "costs", "units"] as Tab[]).map(t => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t === "records" ? "Public records" : t[0].toUpperCase() + t.slice(1)}</button>)}</div>
+    <div className="seg">{(["overview", "debt", "costs", "units"] as Tab[]).map(t => <button key={t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t[0].toUpperCase() + t.slice(1)}</button>)}</div>
     {err && <p className="err">{err}</p>}
 
     {tab === "overview" && <>
@@ -33,13 +32,12 @@ export default function PropertyDetail() {
           <div><label>Purchase price<input type="number" defaultValue={p.purchase_price ?? ""} onBlur={e => run(() => updateRow("properties", p.id, { purchase_price: e.target.value === "" ? null : Number(e.target.value) }))} /></label></div>
           <div><label>Cash invested<input type="number" defaultValue={p.cash_invested ?? ""} onBlur={e => run(() => updateRow("properties", p.id, { cash_invested: e.target.value === "" ? null : Number(e.target.value) }))} /></label></div>
           <div><label>Vacancy %<input type="number" defaultValue={p.vacancy_pct} onBlur={e => run(() => updateRow("properties", p.id, { vacancy_pct: Number(e.target.value) || 0 }))} /></label></div></div>
-        <p className="note">Value is whatever you enter; Stoop does not appraise. For reference, the city’s assessed value is on the Public records tab.</p></div>
+        <p className="note">Value is whatever you enter; Stoop does not appraise.</p></div>
       <div className="grid">{([["NOI", fmtMoney(m.noi)], ["Cash flow", fmtMoney(m.cashFlow)], ["Cap rate", m.capRate.toFixed(2) + "%"], ["Cash-on-cash", m.cashOnCash.toFixed(2) + "%"], ["Equity", fmtMoney(m.equity)], ["LTV", m.ltv.toFixed(1) + "%"], ["DSCR", m.dscr ? m.dscr.toFixed(2) : "—"]] as [string, string][]).map(([l, v]) => <div className="card stat" key={l}><div className="l">{l}</div><div className="v">{v}</div></div>)}</div>
       <p className="note">Calculated from your inputs. <EstimateBadge /></p>
       <RelatedNews p={p} units={units.length} hasLoans={loans.length > 0} />
       <RemoveProperty onRemove={() => run(async () => { await deleteRow("properties", p.id); nav("/"); })} /></>}
 
-    {tab === "records" && <Records p={p} />}
 
     {tab === "debt" && <div className="card"><h2>Debt <EstimateBadge /></h2>
       <p className="note">Balances are calculated from the terms you enter, assuming on-time payments. Your lender’s statement is the source of truth.</p>
@@ -56,28 +54,6 @@ export default function PropertyDetail() {
       <table><thead><tr><th>Unit</th><th>Tenant</th><th>Rent/mo</th><th>Lease end</th><th>Stabilized</th><th /></tr></thead><tbody>
         {units.map(u => <tr key={u.id}><td>{u.label}</td><td>{u.tenant_name || "—"}</td><td>{fmtMoney(Number(u.monthly_rent))}</td><td>{u.lease_end || "—"}</td><td>{u.is_stabilized === null ? "Unknown" : u.is_stabilized ? "Yes" : "No"}</td><td><button className="ghost" onClick={() => run(() => deleteRow("units", u.id))}>×</button></td></tr>)}</tbody></table>
       <UnitForm onAdd={v => run(async () => insertRow("units", { ...v, user_id: await uid(), property_id: p.id }))} /></div>}
-  </>);
-}
-
-function Records({ p }: { p: PropertyRow }) {
-  const [b, setB] = useState<Bundle | null>(null); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
-  const go = useCallback(async (refresh = false) => { if (!p.bbl) return; setBusy(true); setErr(""); try { setB(await lookupBBL(p.bbl, refresh)); } catch (x) { setErr((x as Error).message); } setBusy(false); }, [p.bbl]);
-  useEffect(() => { go(); }, [go]);
-  if (!p.bbl) return <div className="card">This property was added manually, so no tax-lot records are linked.</div>;
-  return (<>
-    <div className="row"><span /> <button className="ghost" onClick={() => go(true)} disabled={busy}>{busy ? "Loading…" : "Refresh"}</button></div>
-    {err && <p className="err">Couldn’t load public records: {err}</p>}
-    {b && Object.entries(b.errors ?? {}).map(([k, v]) => <p key={k} className="note">{k.toUpperCase()} unavailable right now ({v}).</p>)}
-    {b?.pluto && <div className="card"><h2>Assessed value (from PLUTO)</h2>
-      <table><tbody><tr><th>Total assessed</th><td>{b.pluto.assessTotal ? fmtMoney(b.pluto.assessTotal) : "—"}</td></tr><tr><th>Land assessed</th><td>{b.pluto.assessLand ? fmtMoney(b.pluto.assessLand) : "—"}</td></tr><tr><th>Owner of record (PLUTO)</th><td>{b.pluto.owner ?? "—"}</td></tr></tbody></table>
-      <SourceTag id="pluto" asOf={b.fetchedAt} /><SectionNote id="pluto" /></div>}
-    {b?.acris && <div className="card"><h2>Deeds & mortgages (ACRIS)</h2>
-      {b.acris.length === 0 ? <p>No matching documents found.</p> : <table><thead><tr><th>Recorded</th><th>Type</th><th>Amount</th></tr></thead><tbody>
-        {b.acris.map(d => <tr key={d.documentId}><td>{d.recorded?.slice(0, 10) ?? "—"}</td><td>{(d as any).label ?? d.type}</td><td>{d.amount ? fmtMoney(d.amount) : "—"}</td></tr>)}</tbody></table>}
-      <SourceTag id="acris" asOf={b.fetchedAt} /><SectionNote id="acris" /></div>}
-    {b?.hpd && <div className="card"><h2>HPD violations</h2>
-      <p><strong>{b.hpd.open}</strong> open of {b.hpd.sampled} total{Object.keys(b.hpd.byClass).length > 0 && ` (${Object.entries(b.hpd.byClass).map(([c, n]) => `Class ${c}: ${n}`).join(", ")})`}</p>
-      <SourceTag id="hpd" asOf={b.fetchedAt} /><SectionNote id="hpd" /></div>}
   </>);
 }
 
