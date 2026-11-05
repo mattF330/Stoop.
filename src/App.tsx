@@ -13,7 +13,7 @@ import MapPage from "./map/MapPage";
 import Legal from "./pages/Legal";
 
 const BULLET = ["#B933AD", "#00A1DE", "#00933C", "#EE352E", "#0039A6", "#FCCC0A"];
-const LETTER = ["P", "Sp", "M", "N", "C", "Se"];
+const LETTER = ["P", "Sp", "M", "N", "C", "S"];
 
 export default function App() {
   const { session, loading } = useAuth();
