@@ -94,7 +94,7 @@ export function createDemoClient(): any {
       onAuthStateChange: (cb: any) => { listeners.push(cb); return { data: { subscription: { unsubscribe() { listeners = listeners.filter(l => l !== cb); } } } }; },
       signInWithPassword: async () => ({ data: { session }, error: null }),
       signUp: async () => ({ data: { session }, error: null }),
-      updateUser: async () => ({ data: { user: DEMO_USER }, error: null }),
+      updateUser: async (a: any) => { if (a?.data) Object.assign(DEMO_USER.user_metadata, a.data); const sess = { user: { ...DEMO_USER, user_metadata: { ...DEMO_USER.user_metadata } } }; listeners.forEach(l => l("USER_UPDATED", sess)); return { data: { user: DEMO_USER }, error: null }; },
       signOut: async () => { resetDemo(); location.reload(); return { error: null }; },
     },
   };

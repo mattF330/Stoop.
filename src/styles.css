@@ -126,5 +126,6 @@ aside a.sx-add{justify-content:center;background:var(--accent);color:#fff;border
 .sx-links button{all:unset;cursor:pointer;font-size:12px;font-weight:700;color:#fff;border:1px solid #444;border-radius:99px;padding:4px 12px}.sx-links button:hover{background:#222}
 @media(max-width:860px){.sx,.sx-acct{display:none}}
 aside{overflow-y:auto;scrollbar-width:thin;scrollbar-color:#333 transparent}
+@media(max-height:900px){.sx-card .sx-r:nth-of-type(n+5){display:none}}
 @media(max-height:860px){.sx-card .sx-r:nth-of-type(n+4),.sx-card .sx-n{display:none}}
 @media(max-height:700px){.sx-card{display:none}}

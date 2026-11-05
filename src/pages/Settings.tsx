@@ -28,7 +28,7 @@ function TypedConfirm({ word = "DELETE", label, onConfirm }: { word?: string; la
 export default function Settings() {
   const { session } = useAuth(); const user = session!.user;
   const [i, setI] = useState(0); const [prefs, setPrefs] = useState<Prefs>(loadPrefs()); const [msg, setMsg] = useState("");
-  const [name, setName] = useState(""); const [phone, setPhone] = useState<string>(String(user.user_metadata?.phone ?? ""));
+  const [name, setName] = useState(""); const [username, setUsername] = useState<string>(String(user.user_metadata?.username ?? "")); const [phone, setPhone] = useState<string>(String(user.user_metadata?.phone ?? ""));
   const [pw, setPw] = useState({ a: "", b: "" }); const [email, setEmail] = useState(user.email ?? "");
   const [props, setProps] = useState<PropertyRow[]>([]); const [pick, setPick] = useState("");
   const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(""), 3500); };
@@ -36,8 +36,10 @@ export default function Settings() {
   const setP = (patch: Partial<Prefs>) => { const n = { ...prefs, ...patch }; setPrefs(n); savePrefs(n); if (patch.theme && patch.theme !== "system") supabase.from("profiles").update({ theme: patch.theme }).eq("id", user.id).then(() => {}); };
 
   const saveProfile = async () => {
+    const un = username.trim();
+    if (un && !/^[A-Za-z0-9_.]{3,24}$/.test(un)) return flash("Username: 3 to 24 letters, numbers, dots or underscores");
     const a = await supabase.from("profiles").update({ display_name: name }).eq("id", user.id);
-    const b = await supabase.auth.updateUser({ data: { phone } });
+    const b = await supabase.auth.updateUser({ data: { phone, username: un } });
     flash(a.error || b.error ? (a.error || b.error)!.message : "Profile saved");
   };
   const changeEmail = async () => { const { error } = await supabase.auth.updateUser({ email }); flash(error ? error.message : "Check both inboxes to confirm the email change"); };
@@ -57,6 +59,7 @@ export default function Settings() {
 
   const pane = [
     <>{/* Account */}
+      <Row title="Username" desc="Shown in the sidebar instead of your email. Letters, numbers, dots, underscores"><input value={username} onChange={e => setUsername(e.target.value)} placeholder="e.g. matt_nyc" maxLength={24} autoComplete="off" /></Row>
       <Row title="Full name"><input value={name} onChange={e => setName(e.target.value)} /></Row>
       <Row title="Phone number" desc="Optional"><input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="(555) 555-5555" /></Row>
       <Row title="Email address" desc="Changing it requires confirming from your inbox"><div className="row"><input type="email" value={email} onChange={e => setEmail(e.target.value)} /><button className="ghost sm" onClick={changeEmail} disabled={email === user.email}>Change</button></div></Row>
