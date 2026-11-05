@@ -16,7 +16,7 @@ export default function AddProperty() {
   const pick = (c: Candidate) => { window.scrollTo(0, 0); setSel(c); setErr(""); };
 
   const save = async () => {
-    if (!sel || !own || !sel.label.trim()) return; setBusy(true); setErr("");
+    if (!sel || !own || !sel.label.trim() || (manualAddr && !sel.borough)) return; setBusy(true); setErr("");
     try {
       const existing = sel.bbl ? (await listProperties()).find(p => p.bbl === sel.bbl) : null;
       if (existing) throw new Error("You already added this property.");
@@ -29,10 +29,11 @@ export default function AddProperty() {
   return (<><h1>Search properties</h1><p className="muted">Find an NYC address to add to your portfolio.</p>
     {sel && <div className="card"><div className="row" style={{ alignItems: "center" }}><h2 style={{ margin: 0 }}>{sel.label || "New property"}</h2><button className="ghost sm" type="button" onClick={() => { setSel(null); setManualAddr(false); }}>Change address</button></div>
       {manualAddr && <><label>Street address<input value={sel.label} onChange={e => setSel({ ...sel, label: e.target.value })} placeholder="e.g. 123 Atlantic Ave, Brooklyn, NY" /></label>
-      <label>Borough<select value={sel.borough ?? ""} onChange={e => setSel({ ...sel, borough: e.target.value || null })}><option value="">Select borough</option>{["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"].map(b => <option key={b}>{b}</option>)}</select></label></>}
+      <label>Borough (required)<select required value={sel.borough ?? ""} onChange={e => setSel({ ...sel, borough: e.target.value || null })}><option value="">Select borough</option>{["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"].map(b => <option key={b}>{b}</option>)}</select></label></>}
       <label>Nickname (optional)<input value={nick} onChange={e => setNick(e.target.value)} /></label>
       <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="checkbox" style={{ width: "auto" }} checked={own} onChange={e => setOwn(e.target.checked)} />I own or manage this property. Rambl does not verify ownership.</label>
-      <p><button onClick={save} disabled={!own || busy || !sel?.label.trim()}>Add to portfolio</button></p></div>}
+      {manualAddr && !sel.borough && <p className="note">Choose the borough to continue.</p>}
+      <p><button onClick={save} disabled={!own || busy || !sel?.label.trim() || (manualAddr && !sel?.borough)}>Add to portfolio</button></p></div>}
     {!sel && <form className="card" onSubmit={search}><label>Street address (any NYC borough)</label>
       <div className="row"><input aria-label="Street address" value={q} onChange={e => setQ(e.target.value)} placeholder="e.g. 123 Atlantic Ave Brooklyn" minLength={3} required /><button disabled={busy}>Search</button></div>
       <SourceTag id="geosearch" /></form>}
