@@ -10,16 +10,26 @@ const STYLE = "https://tiles.openfreemap.org/styles/positron"; // free vector ti
 const NYC: [number, number] = [-73.95, 40.72];
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 
-type Pt = { lng: number; lat: number };
+type Pt = { lng: number; lat: number; approx?: boolean };
 const cacheKey = (p: PropertyRow) => `stoop.geo.${p.id}.${p.address}`;
 function cached(p: PropertyRow): Pt | null { try { const v = localStorage.getItem(cacheKey(p)); return v ? JSON.parse(v) : null; } catch { return null; } }
 async function locate(p: PropertyRow): Promise<Pt | null> {
   if (p.lat != null && p.lng != null) return { lat: p.lat, lng: p.lng }; // pin the user placed
   const c = cached(p); if (c) return c;
-  const r = await searchAddress(p.address);
-  const m = r.candidates.find(x => x.lat != null && x.lng != null && (!p.bbl || x.bbl === p.bbl)) ?? r.candidates.find(x => x.lat != null && x.lng != null);
-  if (!m) return null;
-  const pt = { lng: m.lng!, lat: m.lat! };
+  const pick = (r: Awaited<ReturnType<typeof searchAddress>>, bbl: string | null) =>
+    (bbl ? r.candidates.find(x => x.lat != null && x.lng != null && x.bbl === bbl) : null) ?? r.candidates.find(x => x.lat != null && x.lng != null);
+  let pt: Pt | null = null;
+  const full = pick(await searchAddress(p.address), p.bbl);
+  if (full) pt = { lng: full.lng!, lat: full.lat! };
+  else {
+    // Fallback: drop the house number and look for the street itself, so the pin lands on the street.
+    const street = p.address.replace(/^\s*[\d\-]+[A-Za-z]?\s+/, "").trim();
+    if (street.length >= 3) {
+      const st = pick(await searchAddress(p.borough && !street.toLowerCase().includes(p.borough.toLowerCase()) ? `${street}, ${p.borough}` : street), null);
+      if (st) pt = { lng: st.lng!, lat: st.lat!, approx: true };
+    }
+  }
+  if (!pt) return null;
   try { localStorage.setItem(cacheKey(p), JSON.stringify(pt)); } catch { /* ignore */ }
   return pt;
 }
@@ -45,9 +55,11 @@ export default function MapPage() {
       catch (e) { setStatus(`Couldn’t save pin: ${(e as Error).message}`); }
     };
     addPin.current = (p, pt) => {
-      const pop = new maplibregl.Popup({ offset: 14, closeButton: false }).setHTML(`<strong>${esc(p.nickname || p.address)}</strong><br/><span style="color:#667">${esc(p.address)}</span><br/><a href="#/property/${encodeURIComponent(p.id)}">Open property →</a><br/><span style="color:#667">Drag the pin to move it.</span>`);
-      const m = new maplibregl.Marker({ color: "#2F5BFF", draggable: true }).setLngLat([pt.lng, pt.lat]).setPopup(pop).addTo(map);
-      m.on("dragend", () => { const l = m.getLngLat(); save(p, { lng: l.lng, lat: l.lat }); });
+      const pop = new maplibregl.Popup({ offset: 14, closeButton: false }).setHTML(`<strong>${esc(p.nickname || p.address)}</strong><br/><span style="color:#667">${esc(p.address)}</span><br/><a href="#/property/${encodeURIComponent(p.id)}">Open property →</a><br/><span style="color:#667">${pt.approx ? "Placed on the street (approximate). " : ""}Double-click the pin, then drag it to the exact spot.</span>`);
+      const m = new maplibregl.Marker({ color: pt.approx ? "#F59E0B" : "#2F5BFF" }).setLngLat([pt.lng, pt.lat]).setPopup(pop).addTo(map);
+      m.getElement().style.cursor = "pointer";
+      m.getElement().addEventListener("dblclick", ev => { ev.stopPropagation(); m.setDraggable(true); m.getElement().style.cursor = "grab"; setStatus(`Drag ${p.nickname || p.address} to its exact location`); });
+      m.on("dragend", () => { const l = m.getLngLat(); m.setDraggable(false); m.getElement().style.cursor = "pointer"; save(p, { lng: l.lng, lat: l.lat }); });
     };
     map.on("click", e => {
       const p = placing.current; if (!p) return;
@@ -77,9 +89,9 @@ export default function MapPage() {
     <div className="row"><h1>Map</h1><span className="note" style={{ margin: 0 }}>{status}</span></div>
     {armed && <p className="note">Click the map where <strong>{armed.nickname || armed.address}</strong> is. <a href="#" onClick={e => { e.preventDefault(); arm(null); }}>Cancel</a></p>}
     <div ref={el} className="stoop-map" />
-    {missed.length > 0 && <div className="card"><strong>Not placed yet</strong><p className="note">NYC GeoSearch couldn’t match these. Pick one, then click the map to drop its pin.</p>
+    {missed.length > 0 && <div className="card"><strong>Not placed yet</strong><p className="note">NYC GeoSearch couldn’t find these, even by street name. Pick one, then click the map to drop its pin.</p>
       {missed.map(p => <div key={p.id} className="row"><span>{p.nickname || p.address}</span><button className="ghost" onClick={() => arm(p)}>Drop pin</button></div>)}</div>}
-    <p className="note">Tip: drag any pin to correct its position. Your placement is saved to your account.</p>
+    <p className="note">Orange pins are placed on the street only (approximate). Double-click any pin, then drag it to its exact spot; your placement is saved to your account.</p>
     <p className="note">Map tiles © OpenStreetMap contributors via OpenFreeMap. Automatic pin positions come from NYC GeoSearch and are approximate; they may not match the exact building or lot.</p>
   </div>);
 }
