@@ -45,7 +45,7 @@ export default function Dashboard() {
     {props.length > 0 && <input className="lsearch" aria-label="Search your properties" placeholder="Search your properties" value={filter} onChange={e => setFilter(e.target.value)} />}
     {filter.trim() && matchProps(props, filter).length === 0 && <p className="note">No properties match “{filter}”.</p>}
     <div className="list" style={{ marginTop: 14 }}>{rows.filter(({ p }) => !filter.trim() || matchProps([p], filter).length > 0).map(({ p, m }) => <Link key={p.id} to={`/property/${p.id}`} className="item">
-      <div className="bul" style={{ background: lineFor(p.borough)[1] }}>{lineFor(p.borough)[0]}</div><div><div className="name">{p.nickname || p.address}</div><div className="addr">{p.address}</div></div>
+      <div className="bul" style={{ background: lineFor(p.borough, p.address)[1] }}>{lineFor(p.borough, p.address)[0]}</div><div><div className="name">{p.nickname || p.address}</div><div className="addr">{p.address}</div></div>
       <div className="n h">{prefs.showNoi ? <>{fmtMoney(m.noi)}<small>NOI</small></> : null}</div>
       <div className="n h">{prefs.showCap ? <>{m.capRate.toFixed(1)}%<small>Cap rate</small></> : null}</div>
       <div className={"n " + (m.cashFlow >= 0 ? "good" : "bad")}>{m.cashFlow > 0 ? "+" : ""}{fmtMoney(cf(m.cashFlow))}<small>Cash flow / {monthly ? "mo" : "yr"}</small></div><span style={{ color: "var(--muted)" }}>›</span></Link>)}</div>
