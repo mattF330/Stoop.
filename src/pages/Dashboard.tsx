@@ -5,10 +5,8 @@ import { propertyMetrics, portfolioTotals, fmtMoney } from "../lib/finance";
 import { toCsv } from "../lib/csv";
 import { loadPrefs, Prefs } from "../lib/prefs";
 import { EstimateBadge } from "../components/Disclaimers";
-import { matchProps } from "../components/PropertySearch";
+import { matchProps, lineFor } from "../lib/lines";
 
-const LINE: Record<string, [string, string]> = { manhattan: ["M", "#EE352E"], brooklyn: ["K", "#FF6319"], queens: ["Q", "#B933AD"], bronx: ["Bx", "#00933C"], "staten island": ["S", "#0039A6"] };
-const lineFor = (b: string | null) => LINE[(b ?? "").toLowerCase()] ?? ["•", "#6D6E71"];
 const short = (n: number) => { const a = Math.abs(n); const s = a >= 1e6 ? (a / 1e6).toFixed(2) + "M" : a >= 1e3 ? Math.round(a / 1e3) + "k" : String(Math.round(a)); return (n < 0 ? "−" : "") + "$" + s; };
 
 export default function Dashboard() {
