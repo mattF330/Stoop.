@@ -8,13 +8,13 @@ export const SOURCES: Record<SourceId, Source> = {
   pluto: { id: "pluto", name: "PLUTO", publisher: "NYC Dept. of City Planning", url: "https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page", cadence: "Monthly", caveat: "Lot data is compiled from several agencies and can be out of date or wrong." },
   acris: { id: "acris", name: "ACRIS", publisher: "NYC Dept. of Finance", url: "https://data.cityofnewyork.us/City-Government/ACRIS-Real-Property-Master/bnx9-e6tj", cadence: "Monthly", caveat: "Recordings lag weeks to months. Mortgage amounts are original principal, not current balance." },
   hpd: { id: "hpd", name: "HPD", publisher: "NYC Housing Preservation & Development", url: "https://data.cityofnewyork.us/Housing-Development/Housing-Maintenance-Code-Violations/wvxf-dwi5", cadence: "Daily", caveat: "Violation status may not reflect work already completed." },
-  news: { id: "news", name: "News feeds", publisher: "Third-party publishers", url: "", cadence: "Daily", caveat: "Headlines link to the original publisher. Tar Beach does not verify articles." },
+  news: { id: "news", name: "News feeds", publisher: "Third-party publishers", url: "", cadence: "Daily", caveat: "Headlines link to the original publisher. Rambl does not verify articles." },
   user: { id: "user", name: "You", publisher: "Entered by you", url: "", cadence: "-", caveat: "" },
-  estimate: { id: "estimate", name: "Tar Beach estimate", publisher: "Calculated by Tar Beach", url: "", cadence: "-", caveat: "Estimates use your inputs and assumptions. Not a quote or appraisal." },
+  estimate: { id: "estimate", name: "Rambl estimate", publisher: "Calculated by Rambl", url: "", cadence: "-", caveat: "Estimates use your inputs and assumptions. Not a quote or appraisal." },
 };
 
 export const GLOBAL_DISCLAIMER =
-  "Tar Beach shows public records and third-party data. It may be incomplete, delayed or wrong. Verify with the original source before making financial or legal decisions. Not financial, legal or tax advice.";
+  "Rambl shows public records and third-party data. It may be incomplete, delayed or wrong. Verify with the original source before making financial or legal decisions. Not financial, legal or tax advice.";
 
 export const TERMS_VERSION = "2026-11-v2";
 

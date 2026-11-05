@@ -32,7 +32,7 @@ export default function App() {
   return (<DisclaimerGate>
     <div className="app">
       <aside>
-        <div className="logo">Tar Beach</div>
+        <div className="logo">Rambl<span className="logo-sub">NYC rental portfolio</span></div>
         {link("/", ICON.home, "Portfolio", true)}{link("/map", ICON.map, "Map")}{link("/news", ICON.news, "News")}{link("/calculators", ICON.calc, "Calculators")}{link("/settings", ICON.gear, "Settings")}
         <div className="spacer" />
         {demo && <div className="note" style={{ margin: 0, padding: "0 12px" }}><strong>Demo mode</strong>: fictional sample data stored in this browser only.</div>}

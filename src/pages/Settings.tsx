@@ -64,7 +64,7 @@ export default function Settings() {
       <Row title="Profile picture" desc="Needs file storage, which isn’t set up yet"><button className="ghost sm" disabled>Upload</button></Row>
       <p><button onClick={saveProfile}>Save changes</button></p>
       <div className="card"><h2>Change password</h2><label>New password</label><input type="password" value={pw.a} onChange={e => setPw({ ...pw, a: e.target.value })} /><label>Confirm</label><input type="password" value={pw.b} onChange={e => setPw({ ...pw, b: e.target.value })} /><p><button onClick={changePassword}>Update password</button></p></div></>,
-    <><Soon>Billing and plans aren’t connected yet. Plan changes, payment methods, invoices, cancellation and restore purchases will appear here once a payment provider is set up. Tar Beach is free while in beta.</Soon>
+    <><Soon>Billing and plans aren’t connected yet. Plan changes, payment methods, invoices, cancellation and restore purchases will appear here once a payment provider is set up. Rambl is free while in beta.</Soon>
       <Row title="Current plan">Free (beta)</Row></>,
     <><Row title="Cash-flow display" desc="Applies to the portfolio page"><select value={prefs.cf} onChange={e => setP({ cf: e.target.value as Prefs["cf"] })}><option value="monthly">Monthly</option><option value="annual">Annual</option></select></Row>
       <Row title="Currency" desc="More currencies may come later"><select disabled><option>USD</option></select></Row>
@@ -85,7 +85,7 @@ export default function Settings() {
     <>{Object.keys(LEGAL).map(k => <Row key={k} title={k}><Link to={`/legal/${LEGAL[k]}`}><button className="ghost sm">Read</button></Link></Row>)}
       <Row title="Contact support" desc="Placeholder"><button className="ghost sm" disabled>Contact</button></Row>
       <Row title="Report a problem" desc="Placeholder"><button className="ghost sm" disabled>Report</button></Row>
-      <Row title="App version">Tar Beach {VERSION}</Row>
+      <Row title="App version">Rambl {VERSION}</Row>
       <div className="card"><h2>Data sources</h2><table><thead><tr><th>Source</th><th>Updates</th><th>Caveat</th></tr></thead><tbody>{Object.values(SOURCES).filter(s => s.url).map(s => <tr key={s.id}><td><a href={s.url} target="_blank" rel="noopener noreferrer">{s.name}</a></td><td>{s.cadence}</td><td>{s.caveat}</td></tr>)}</tbody></table></div></>,
     <><p className="note" style={{ marginTop: 0 }}>These can’t be undone.</p><div className="dz2">
       <Row title="Delete individual property data" desc="Removes one property with its loans, costs and units">{props.length ? <select value={pick} onChange={e => setPick(e.target.value)}>{props.map(p => <option key={p.id} value={p.id}>{p.nickname || p.address}</option>)}</select> : "No properties"}</Row>
