@@ -3,8 +3,6 @@ import { GLOBAL_DISCLAIMER, SOURCES } from "../lib/sources";
 
 // Set to your real support address before launch. Shown in the Terms and Privacy Policy.
 export const CONTACT_EMAIL = "[add support email]";
-// Set to false once a lawyer has reviewed these documents.
-const DRAFT = true;
 const UPDATED = "November 4, 2026";
 
 type Doc = { title: string; body: JSX.Element };
@@ -94,12 +92,13 @@ export const DOCS: Record<string, Doc> = {
 export default function Legal() {
   const { doc } = useParams(); const d = doc ? DOCS[doc] : undefined;
   if (!d) return <Navigate to="/legal/terms" replace />;
-  return (<div className="wrap legal">
-    <p><Link to="/">← Back to Rambl</Link></p>
-    <h1>{d.title}</h1>
-    <p className="note">Last updated {UPDATED}</p>
-    {DRAFT && <p className="note"><strong>Draft:</strong> this document has not yet been reviewed by a lawyer.</p>}
-    <nav className="row" style={{ justifyContent: "flex-start", gap: 14 }}>{Object.entries(DOCS).map(([k, v]) => <Link key={k} to={`/legal/${k}`}>{v.title}</Link>)}</nav>
-    {d.body}
+  return (<div className="legalpage">
+    <header className="legalhead"><Link to="/" className="lg-logo"><i>R</i>Rambl</Link><Link to="/" className="lg-back">← Back to Rambl</Link></header>
+    <div className="legal">
+      <h1>{d.title}</h1>
+      <p className="lg-upd">Last updated {UPDATED}</p>
+      <nav className="lg-tabs">{Object.entries(DOCS).map(([k, v]) => <Link key={k} to={`/legal/${k}`} className={k === doc ? "on" : ""}>{v.title}</Link>)}</nav>
+      <div className="lg-body">{d.body}</div>
+    </div>
   </div>);
 }
