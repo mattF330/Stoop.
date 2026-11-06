@@ -3,7 +3,7 @@ import { insertRow, deleteRow, updateRow, listFor, listProperties, PropertyRow, 
 import { fmtMoney, loanStatus } from "../lib/finance";
 import { toLoan } from "../lib/data";
 import { amortSchedule, payoffDate, yearly, refinance, SchedRow } from "../lib/loans";
-import { MaintRow, VacancyRow, ReminderRow, RentHistRow, REMINDER_KINDS, today, vacancyDays, lostRent, vacancyTotals, yearRange, maintenanceTotal, trailingMaintenance, upcoming, dueText, describeChange } from "../lib/owner";
+import { MaintRow, VacancyRow, ReminderRow, RentHistRow, REMINDER_KINDS, today, vacancyDays, lostRent, vacancyTotals, yearRange, maintenanceTotal, trailingMaintenance, upcoming, dueText, describeChange, daysBetween } from "../lib/owner";
 import { downloadCsv } from "../lib/csv";
 import { supabase } from "../lib/supabase";
 import { EstimateBadge } from "./Disclaimers";
@@ -80,7 +80,7 @@ export function RemindersPanel({ propertyId, title = "Reminders" }: { propertyId
   const act = async (f: () => Promise<unknown>) => { setErr(""); try { await f(); await load(); window.dispatchEvent(new Event("stoop-reminders")); } catch (x) { setErr((x as Error).message); } };
   if (!list) return <div className="card"><h2>{title}</h2>{err ? <p className="err">{err}</p> : "Loading…"}</div>;
   const name = (id: string | null) => { const p = props.find(x => x.id === id); return p ? (p.nickname || p.address) : "Portfolio"; };
-  const leases = units.filter(u => u.lease_end).map(u => ({ id: "lease" + u.id, label: `${props.find(p => p.id === u.property_id)?.nickname || props.find(p => p.id === u.property_id)?.address || ""} · ${u.label}: lease ends`, due: u.lease_end! }));
+  const leases = units.filter(u => u.lease_end && daysBetween(today(), u.lease_end) >= 0 && daysBetween(today(), u.lease_end) <= 365).map(u => ({ id: "lease" + u.id, label: `${props.find(p => p.id === u.property_id)?.nickname || props.find(p => p.id === u.property_id)?.address || ""} · ${u.label}: lease ends`, due: u.lease_end! }));
   const open = list.filter(r => !r.done).sort((x, y) => x.due_date.localeCompare(y.due_date)); const done = list.filter(r => r.done);
   return (<div className="card"><h2>{title}</h2>
     {err && <p className="err">{err}</p>}
@@ -88,7 +88,7 @@ export function RemindersPanel({ propertyId, title = "Reminders" }: { propertyId
       {open.map(r => { const late = r.due_date < today(); return <tr key={r.id}><td><b>{r.title}</b><div className="note" style={{ margin: 0 }}>{REMINDER_KINDS[r.kind]}{!propertyId && " · " + name(r.property_id)}{r.notes && " · " + r.notes}</div></td>
         <td style={{ color: late ? "var(--bad)" : undefined }}>{r.due_date}<div className="note" style={{ margin: 0, color: "inherit" }}>{dueText(r.due_date)}</div></td>
         <td><button className="sm" onClick={() => act(() => updateRow("reminders", r.id, { done: true }))}>Done</button><button className="ghost" onClick={() => act(() => deleteRow("reminders", r.id))}>×</button></td></tr>; })}
-      {leases.sort((x, y) => x.due.localeCompare(y.due)).map(l => <tr key={l.id}><td>{l.label}<div className="note" style={{ margin: 0 }}>From your rent roll</div></td><td>{l.due}<div className="note" style={{ margin: 0 }}>{dueText(l.due)}</div></td><td /></tr>)}</tbody></table>
+      {leases.sort((x, y) => x.due.localeCompare(y.due)).map(l => <tr key={l.id}><td>{l.label}<div className="note" style={{ margin: 0 }}>From your rent roll (leases ending within a year)</div></td><td>{l.due}<div className="note" style={{ margin: 0 }}>{dueText(l.due)}</div></td><td /></tr>)}</tbody></table>
     {!open.length && !leases.length && <p className="note">Nothing set. Add dates you want to be reminded about, like an insurance renewal or an inspection.</p>}
     <Form onSubmit={() => { act(async () => insertRow("reminders", { user_id: await uid(), property_id: (propertyId ?? v.property_id) || null, kind: v.kind, title: v.title, due_date: v.due_date, notes: v.notes || null })); s({ ...v, title: "", due_date: "", notes: "" }); }}>
       <Field l="Type"><select value={v.kind} onChange={e => s({ ...v, kind: e.target.value as ReminderRow["kind"] })}>{Object.entries(REMINDER_KINDS).map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></Field>
