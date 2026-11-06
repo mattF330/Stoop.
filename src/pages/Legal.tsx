@@ -20,7 +20,7 @@ const Terms = (<>
   <h3>5. Your account</h3>
   <p>You must be at least 18 and able to form a binding contract. Give accurate information, keep your password secure, and tell us if you suspect unauthorized use. You are responsible for activity under your account.</p>
   <h3>6. Your content</h3>
-  <p>You own the information you enter (properties, loans, expenses, rents, notes). You give us permission to store and process it only to run Rambl for you. You are responsible for having the right to enter it. Don’t enter other people’s sensitive personal data (for example tenants’ government ID or financial account numbers) into free-text fields. When you upload a spreadsheet, photo or receipt, you confirm that it is your own information or that you have the right to use it, and that it does not contain government ID numbers or financial account numbers. Upload only JPEG, PNG or WebP images and spreadsheet or CSV files; Rambl may reject or remove anything else.</p>
+  <p>You own the information you enter (properties, loans, expenses, rents, notes). You give us permission to store and process it only to run Rambl for you. You are responsible for having the right to enter it. Don’t enter other people’s sensitive personal data (for example tenants’ government ID or financial account numbers) into free-text fields.</p>
   <h3>7. Acceptable use</h3>
   <p>Don’t misuse Rambl. In particular, don’t: break the law; attempt to access other users’ data; probe, scrape or overload the service or its data sources; reverse engineer it; upload malware; or use Rambl to harass, discriminate against, or unlawfully screen tenants or applicants.</p>
   <h3>8. Third-party services</h3>
@@ -53,8 +53,6 @@ const Privacy = (<>
   <p>We do not sell your personal information, and we do not use your property data for advertising. Rambl does not currently use your data to train AI models.</p>
   <h3>How we use it</h3>
   <p>To run Rambl for you: show your portfolio, compute estimates, look up public information for the addresses you add, keep the service secure, and contact you about your account.</p>
-  <h3>Files you upload</h3>
-  <p>Spreadsheets, CSV files and receipt or invoice files are read on your device. Rambl saves only the rows or values you confirm, not the file itself. Receipt text is read by software running in your browser; the reader downloads its program files from a public content-delivery network the first time you use it, but your file’s contents are not sent there. Property photos are re-encoded on your device (which removes embedded location data), stored privately in your account, and can be deleted by you at any time; deleting a property deletes its photos.</p>
   <h3>Who handles it</h3>
   <p>We use service providers to operate Rambl: a database and authentication provider (Supabase), web hosting (GitHub Pages), a map-tile provider (OpenFreeMap, which receives the map area your browser requests), and NYC’s public GeoSearch and Open Data services (which receive the addresses or tax-lot numbers you search for). They process data only as needed to provide their services. We may also disclose information if required by law.</p>
   <h3>Your browser</h3>

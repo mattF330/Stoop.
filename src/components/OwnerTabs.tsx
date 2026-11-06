@@ -7,7 +7,6 @@ import { MaintRow, VacancyRow, ReminderRow, RentHistRow, REMINDER_KINDS, today, 
 import { downloadCsv } from "../lib/csv";
 import { supabase } from "../lib/supabase";
 import { EstimateBadge } from "./Disclaimers";
-import { ReceiptReader } from "./Uploads";
 
 const uid = async () => (await supabase.auth.getUser()).data.user!.id;
 const num = (v: string) => (v === "" ? 0 : Number(v));
@@ -30,7 +29,6 @@ export function MaintenanceTab({ propertyId, log, run }: { propertyId: string; l
         <td><input type="checkbox" style={{ width: "auto" }} checked={e.counts_in_costs} aria-label="Counts in operating costs" onChange={x => run(() => updateRow("maintenance_log", e.id, { counts_in_costs: x.target.checked }))} /></td>
         <td><button className="ghost" onClick={() => run(() => deleteRow("maintenance_log", e.id))}>×</button></td></tr>)}</tbody></table>
     {!sorted.length && <p className="note">No entries yet. Log repairs, who did the work, and what it cost.</p>}
-    <ReceiptReader onGuess={g => s(x => ({ ...x, logged_on: g.date ?? x.logged_on, title: g.vendor ? (x.title || g.vendor) : x.title, cost: g.total != null ? String(g.total) : x.cost }))} />
     <Form onSubmit={() => { run(async () => insertRow("maintenance_log", { user_id: await uid(), property_id: propertyId, logged_on: v.logged_on, title: v.title, contractor: v.contractor || null, category: v.category || null, cost: num(v.cost), counts_in_costs: v.counts, notes: v.notes || null })); s({ ...v, title: "", contractor: "", cost: "", notes: "" }); }}>
       <Field l="Date"><input type="date" required value={v.logged_on} onChange={e => s({ ...v, logged_on: e.target.value })} /></Field>
       <Field l="What was done"><input required value={v.title} onChange={e => s({ ...v, title: e.target.value })} /></Field>
