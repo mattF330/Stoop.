@@ -5,13 +5,15 @@ import { propertyMetrics, loanStatus, fmtMoney } from "../lib/finance";
 import { supabase } from "../lib/supabase";
 import { relevantNews, NewsLite } from "../lib/alerts";
 import { isRelevant } from "../../supabase/functions/_shared/relevance";
+import { ImportTab, PhotosNotesTab } from "../components/Uploads";
+import { removeAllPhotos } from "../lib/photos";
 import { MaintenanceTab, VacancyTab, RemindersPanel, LoanSchedule, UnitEditor, UnitHistory } from "../components/OwnerTabs";
 import { MaintRow, VacancyRow, RentHistRow, trailingMaintenance } from "../lib/owner";
 import { Link } from "react-router-dom";
 import { SourceTag, SectionNote, EstimateBadge } from "../components/Disclaimers";
 
-type Tab = "overview" | "debt" | "costs" | "units" | "maintenance" | "vacancy" | "reminders";
-const TAB_LABEL: Record<Tab, string> = { overview: "Overview", debt: "Debt", costs: "Costs", units: "Units", maintenance: "Maintenance", vacancy: "Vacancy", reminders: "Reminders" };
+type Tab = "overview" | "debt" | "costs" | "units" | "maintenance" | "vacancy" | "reminders" | "media" | "import";
+const TAB_LABEL: Record<Tab, string> = { overview: "Overview", debt: "Debt", costs: "Costs", units: "Units", maintenance: "Maintenance", vacancy: "Vacancy", reminders: "Reminders", media: "Photos & notes", import: "Import" };
 const uid = async () => (await supabase.auth.getUser()).data.user!.id;
 
 export default function PropertyDetail() {
@@ -43,7 +45,7 @@ export default function PropertyDetail() {
       <p className="note">Calculated from your inputs. <EstimateBadge /></p>
       <p className="note">Records you keep here — maintenance, vacancies, rent history and reminders — are your own notes. <Link to={`/reports?property=${p.id}`}>Build a one-page report for this property</Link> to share with a lender or partner.</p>
       <RelatedNews p={p} units={units.length} hasLoans={loans.length > 0} />
-      <RemoveProperty onRemove={() => run(async () => { await deleteRow("properties", p.id); nav("/"); })} /></>}
+      <RemoveProperty onRemove={() => run(async () => { await removeAllPhotos(p.id); await deleteRow("properties", p.id); nav("/"); })} /></>}
 
 
     {tab === "debt" && <div className="card"><h2>Debt <EstimateBadge /></h2>
@@ -68,6 +70,8 @@ export default function PropertyDetail() {
 
     {tab === "maintenance" && <MaintenanceTab propertyId={p.id} log={maint} run={run} />}
     {tab === "vacancy" && <VacancyTab propertyId={p.id} units={units} vacs={vacs} run={run} />}
+    {tab === "media" && <PhotosNotesTab propertyId={p.id} />}
+    {tab === "import" && <ImportTab propertyId={p.id} existingUnits={units.map(u => u.label.toLowerCase())} run={run} />}
     {tab === "reminders" && <RemindersPanel propertyId={p.id} title="Reminders for this property" />}
   </>);
 }

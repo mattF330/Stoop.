@@ -9,7 +9,7 @@ const DEMO_USER = { id: "demo-user", email: "demo@stoop.local", created_at: "202
 function seed(): DB {
   const now = Date.now(), d = (h: number) => new Date(now - h * 36e5).toISOString();
   return {
-    profiles: [], terms_acceptances: [], properties: [], loans: [], expenses: [], units: [], property_snapshots: [], reminders: [], maintenance_log: [], vacancies: [], rent_history: [], public_records_cache: [],
+    profiles: [], terms_acceptances: [], properties: [], loans: [], expenses: [], units: [], property_snapshots: [], reminders: [], maintenance_log: [], vacancies: [], rent_history: [], property_notes: [], property_photos: [], public_records_cache: [],
     news_items: [
       { id: "n1", url: "https://example.com/sample-1", title: "[Sample] Rent Guidelines Board schedules preliminary vote", source_name: "Sample feed", published_at: d(5), excerpt: "Placeholder headline for previewing the news page. Not a real article.", topics: ["rent-stabilization", "regulation"], score: 9, fetched_at: d(1) },
       { id: "n2", url: "https://example.com/sample-2", title: "[Sample] Brooklyn multifamily sales tick up in latest quarter", source_name: "Sample feed", published_at: d(30), excerpt: "Placeholder headline. Not a real article.", topics: ["market"], score: 6, fetched_at: d(1) },
@@ -22,7 +22,7 @@ let db: DB = load();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { /* ignore */ } };
 export const resetDemo = () => { db = seed(); save(); };
 
-const CASCADE: Record<string, string[]> = { properties: ["loans", "expenses", "units", "property_snapshots", "reminders", "maintenance_log", "vacancies", "rent_history"] };
+const CASCADE: Record<string, string[]> = { properties: ["loans", "expenses", "units", "property_snapshots", "reminders", "maintenance_log", "vacancies", "rent_history", "property_notes", "property_photos"] };
 const UNIT_CHILDREN = ["vacancies", "rent_history"];
 
 class Query implements PromiseLike<{ data: any; error: { message: string } | null }> {
