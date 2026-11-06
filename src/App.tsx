@@ -3,6 +3,7 @@ import { useAuth } from "./lib/auth";
 import { demo } from "./lib/supabase";
 import { DisclaimerGate, Footer } from "./components/Disclaimers";
 import AuthPage from "./pages/AuthPage";
+import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import AddProperty from "./pages/AddProperty";
 import UpdateBar from "./components/UpdateBar";
@@ -23,7 +24,11 @@ export default function App() {
   // Legal pages are readable by anyone, including before signing in or accepting the terms.
   if (loc.pathname.startsWith("/legal/")) return <><Routes><Route path="/legal/:doc" element={<Legal />} /></Routes><Footer /></>;
   if (loading) return <div className="wrap">Loading…</div>;
-  if (!session) return <><AuthPage /><Footer /></>;
+  if (!session) return (<Routes>
+    <Route path="/signin" element={<><AuthPage initial="in" /><Footer /></>} />
+    <Route path="/signup" element={<><AuthPage initial="up" /><Footer /></>} />
+    <Route path="*" element={<Landing />} />
+  </Routes>);
   const link = (to: string, n: number, label: string, end = false) => <NavLink to={to} end={end} className={({ isActive }) => (isActive ? "active" : "")}><em className="nb" style={{ background: BULLET[n - 1], color: n === 6 ? "#111" : undefined }}>{LETTER[n - 1]}</em>{label}</NavLink>;
   return (<DisclaimerGate>
     <div className="app">
