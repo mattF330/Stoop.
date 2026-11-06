@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { calcMonthlyPayment, fmtMoney } from "../lib/finance";
+import { AmortCalc, RefiBox } from "../components/OwnerTabs";
 import { EstimateBadge } from "../components/Disclaimers";
 export default function Calculators() {
   const [price, setPrice] = useState(1000000); const [down, setDown] = useState(25); const [rate, setRate] = useState(6.75); const [yrs, setYrs] = useState(30);
@@ -13,5 +14,8 @@ export default function Calculators() {
       <div><label>Rent/mo<input type="number" value={rent} onChange={n(setRent)} /></label></div><div><label>Vacancy %<input type="number" value={vac} onChange={n(setVac)} /></label></div>
       <div><label>Annual operating costs<input type="number" value={opex} onChange={n(setOpex)} /></label></div></div></div>
     <div className="grid">{[["Loan", fmtMoney(loan)], ["Payment / mo", fmtMoney(pay)], ["NOI", fmtMoney(noi)], ["Cash flow / yr", fmtMoney(cf)], ["Cap rate", (price > 0 ? (noi / price) * 100 : 0).toFixed(2) + "%"], ["DSCR", pay > 0 ? (noi / (pay * 12)).toFixed(2) : "—"]].map(([l, v]) => <div className="card stat" key={l}><div className="l">{l}</div><div className="v">{v}</div></div>)}</div>
-    <p className="note">Illustrative math from the numbers above. Rates, taxes, closing costs and rent-regulation limits are not included.</p></>);
+    <p className="note">Illustrative math from the numbers above. Rates, taxes, closing costs and rent-regulation limits are not included.</p>
+    <h1 style={{ marginTop: 40 }}>Loan tools</h1>
+    <AmortCalc />
+    <div className="card"><h2>Refinance what-if <EstimateBadge /></h2><RefiBox start={{ balance: 400000, payment: 2900, months: 300 }} /></div></>);
 }

@@ -4,7 +4,9 @@ import { listProperties, listFor, toLoan, PropertyRow, LoanRow, ExpenseRow, Unit
 import { propertyMetrics, portfolioTotals, fmtMoney } from "../lib/finance";
 import { toCsv } from "../lib/csv";
 import { loadPrefs, Prefs } from "../lib/prefs";
+import { RemindersPanel } from "../components/OwnerTabs";
 import { EstimateBadge } from "../components/Disclaimers";
+import { trailingMaintenance, MaintRow } from "../lib/owner";
 import { matchProps, lineFor } from "../lib/lines";
 
 const short = (n: number) => { const a = Math.abs(n); const s = a >= 1e6 ? (a / 1e6).toFixed(2) + "M" : a >= 1e3 ? Math.round(a / 1e3) + "k" : String(Math.round(a)); return (n < 0 ? "−" : "") + "$" + s; };
@@ -16,12 +18,12 @@ export default function Dashboard() {
   useEffect(() => { const f = () => setPrefs(loadPrefs()); window.addEventListener("stoop-prefs", f); return () => window.removeEventListener("stoop-prefs", f); }, []);
   useEffect(() => { (async () => {
     try {
-      const [p, loans, exp, units] = await Promise.all([listProperties(), listFor<LoanRow>("loans"), listFor<ExpenseRow>("expenses"), listFor<UnitRow>("units")]);
+      const [p, loans, exp, units, maint] = await Promise.all([listProperties(), listFor<LoanRow>("loans"), listFor<ExpenseRow>("expenses"), listFor<UnitRow>("units"), listFor<MaintRow>("maintenance_log")]);
       setProps(p);
       setRows(p.map(pr => ({ p: pr, m: propertyMetrics({
         value: Number(pr.current_value ?? pr.purchase_price ?? 0),
         monthlyRent: units.filter(u => u.property_id === pr.id).reduce((s, u) => s + Number(u.monthly_rent), 0),
-        vacancyPct: Number(pr.vacancy_pct ?? 5), annualExpenses: exp.filter(e => e.property_id === pr.id).reduce((s, e) => s + Number(e.annual_amount), 0),
+        vacancyPct: Number(pr.vacancy_pct ?? 5), annualExpenses: exp.filter(e => e.property_id === pr.id).reduce((s, e) => s + Number(e.annual_amount), 0) + trailingMaintenance(maint, pr.id),
         loans: loans.filter(l => l.property_id === pr.id).map(toLoan), cashInvested: Number(pr.cash_invested ?? 0) }) })));
     } catch (e) { setErr((e as Error).message); }
   })(); }, []);
@@ -41,7 +43,7 @@ export default function Dashboard() {
       <div className="s"><div className="l">Cash flow / {monthly ? "mo" : "yr"}</div><div className={"v " + (t.cashFlow >= 0 ? "good" : "bad")}>{t.cashFlow > 0 ? "+" : ""}{short(cf(t.cashFlow))}</div></div>
     </div>}
     <div className="row" style={{ alignItems: "center", marginTop: props.length ? 0 : 40 }}><h2 className="lines" style={{ margin: 0 }}>Your lines</h2>
-      {props.length > 0 && <button className="ghost" onClick={exportCsv}>Export CSV</button>}<Link to="/add" className="btn" style={{ textDecoration: "none" }}>Add property</Link></div>
+      {props.length > 0 && <Link to="/reports" className="btn ghost" style={{ textDecoration: "none" }}>Reports</Link>}{props.length > 0 && <button className="ghost" onClick={exportCsv}>Export CSV</button>}<Link to="/add" className="btn" style={{ textDecoration: "none" }}>Add property</Link></div>
     {props.length > 0 && <input className="lsearch" aria-label="Search your properties" placeholder="Search your properties" value={filter} onChange={e => setFilter(e.target.value)} />}
     {filter.trim() && matchProps(props, filter).length === 0 && <p className="note">No properties match “{filter}”.</p>}
     <div className="list" style={{ marginTop: 14 }}>{rows.filter(({ p }) => !filter.trim() || matchProps([p], filter).length > 0).map(({ p, m }) => <Link key={p.id} to={`/property/${p.id}`} className="item">
@@ -49,5 +51,6 @@ export default function Dashboard() {
       <div className="n h">{prefs.showNoi ? <>{fmtMoney(m.noi)}<small>NOI</small></> : null}</div>
       <div className="n h">{prefs.showCap ? <>{m.capRate.toFixed(1)}%<small>Cap rate</small></> : null}</div>
       <div className={"n " + (m.cashFlow >= 0 ? "good" : "bad")}>{m.cashFlow > 0 ? "+" : ""}{fmtMoney(cf(m.cashFlow))}<small>Cash flow / {monthly ? "mo" : "yr"}</small></div><span style={{ color: "var(--muted)" }}>›</span></Link>)}</div>
+    <div style={{ marginTop: 28 }}><RemindersPanel title="Reminders &amp; dates" /></div>
     <p className="note">Totals use the values, rents and loan terms you entered. Rambl doesn’t appraise properties.</p></>);
 }

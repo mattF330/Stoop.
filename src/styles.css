@@ -153,3 +153,17 @@ aside>*{flex-shrink:0}aside .spacer{flex:1 0 12px}
 .authwrap button:not(.ghost){background:#111;color:#fff}
 .authwrap input:focus{border-color:#111;outline:2px solid rgba(17,17,17,.15)}
 .authwrap a{color:#111}
+
+/* owner tools */
+.seg .ghost-link{align-self:center;margin:0 6px 0 12px;font-size:13px;color:var(--muted)}
+.rep-h{font-size:24px;margin:0 0 6px}.rep h3{margin:16px 0 4px;font-size:14px}.rep table td:last-child{white-space:nowrap}
+.rep-top{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px}
+.rep-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.rep-stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px}.rep-stat .l{font-size:11px;color:var(--muted)}.rep-stat .v{font-weight:600}
+.rep-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}.onepager{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:20px}
+@media (max-width:700px){.rep-stats{grid-template-columns:repeat(2,1fr)}.rep-cols{grid-template-columns:1fr}}
+@media print{
+  aside,.ubar,.noprint,footer,.modal{display:none!important}
+  .app{display:block!important}body{background:#fff!important;color:#000!important}main.wrap{padding:0!important;max-width:none!important;margin:0!important}
+  .rep-page{break-after:page;break-inside:avoid;border:none!important;box-shadow:none!important;padding:0!important;margin:0 0 16px!important}.rep-page:last-child{break-after:auto}
+  .card{box-shadow:none!important}
+}

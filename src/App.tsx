@@ -13,10 +13,11 @@ import Calculators from "./pages/Calculators";
 import News from "./pages/News";
 import Settings from "./pages/Settings";
 import MapPage from "./map/MapPage";
+import Reports from "./pages/Reports";
 import Legal from "./pages/Legal";
 
 const BULLET = ["#B933AD", "#00A1DE", "#00933C", "#EE352E", "#0039A6", "#FCCC0A"];
-const LETTER = ["P", "Sp", "M", "N", "C", "S"];
+const LETTER = ["P", "R", "M", "N", "C", "S"];
 
 export default function App() {
   const { session, loading } = useAuth();
@@ -34,7 +35,7 @@ export default function App() {
     <div className="app">
       <aside>
         <div className="logo"><i>R</i>Rambl</div><div className="logo-sub">NYC rental portfolio</div>
-        {link("/", 1, "Portfolio", true)}{link("/map", 3, "Map")}{link("/news", 4, "News")}{link("/calculators", 5, "Calculators")}{link("/settings", 6, "Settings")}
+        {link("/", 1, "Portfolio", true)}{link("/reports", 2, "Reports")}{link("/map", 3, "Map")}{link("/news", 4, "News")}{link("/calculators", 5, "Calculators")}{link("/settings", 6, "Settings")}
         <SideStats />
         <div className="spacer" />
         <SideAccount />
@@ -42,7 +43,7 @@ export default function App() {
       </aside>
       <div><UpdateBar /><main className="wrap"><Routes>
         <Route path="/" element={<Dashboard />} /><Route path="/add" element={<AddProperty />} /><Route path="/property/:id" element={<PropertyDetail />} />
-        <Route path="/map" element={<MapPage />} /><Route path="/news" element={<News />} /><Route path="/calculators" element={<Calculators />} /><Route path="/settings" element={<Settings />} />
+        <Route path="/map" element={<MapPage />} /><Route path="/news" element={<News />} /><Route path="/calculators" element={<Calculators />} /><Route path="/settings" element={<Settings />} /><Route path="/reports" element={<Reports />} />
         <Route path="*" element={<Navigate to="/" />} /></Routes></main></div>
     </div><Footer />
   </DisclaimerGate>);

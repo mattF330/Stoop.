@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { listFor, listProperties, toLoan, UnitRow, LoanRow, ExpenseRow } from "../lib/data";
 import { propertyMetrics, portfolioTotals } from "../lib/finance";
+import { trailingMaintenance, MaintRow } from "../lib/owner";
 import { loadPrefs } from "../lib/prefs";
 
 const money = (n: number) => (n < 0 ? "−" : "") + "$" + Math.abs(Math.round(n)).toLocaleString("en-US");
@@ -15,8 +16,8 @@ export function SideStats() {
     let off = false;
     (async () => {
       try {
-        const [p, u, loans, exp] = await Promise.all([listProperties(), listFor<UnitRow>("units"), listFor<LoanRow>("loans"), listFor<ExpenseRow>("expenses")]);
-        const ms = p.map(pr => propertyMetrics({ value: Number(pr.current_value ?? pr.purchase_price ?? 0), monthlyRent: u.filter(x => x.property_id === pr.id).reduce((a, x) => a + Number(x.monthly_rent), 0), vacancyPct: Number(pr.vacancy_pct ?? 5), annualExpenses: exp.filter(e => e.property_id === pr.id).reduce((a, e) => a + Number(e.annual_amount), 0), loans: loans.filter(l => l.property_id === pr.id).map(toLoan), cashInvested: Number(pr.cash_invested ?? 0) }));
+        const [p, u, loans, exp, maint] = await Promise.all([listProperties(), listFor<UnitRow>("units"), listFor<LoanRow>("loans"), listFor<ExpenseRow>("expenses"), listFor<MaintRow>("maintenance_log")]);
+        const ms = p.map(pr => propertyMetrics({ value: Number(pr.current_value ?? pr.purchase_price ?? 0), monthlyRent: u.filter(x => x.property_id === pr.id).reduce((a, x) => a + Number(x.monthly_rent), 0), vacancyPct: Number(pr.vacancy_pct ?? 5), annualExpenses: exp.filter(e => e.property_id === pr.id).reduce((a, e) => a + Number(e.annual_amount), 0) + trailingMaintenance(maint, pr.id), loans: loans.filter(l => l.property_id === pr.id).map(toLoan), cashInvested: Number(pr.cash_invested ?? 0) }));
         const t = portfolioTotals(ms, p.map(pr => Number(pr.current_value ?? pr.purchase_price ?? 0)));
         const now = Date.now(); let next: { days: number; label: string } | null = null;
         for (const x of u) {

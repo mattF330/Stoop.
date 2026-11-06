@@ -3,13 +3,13 @@
 const KEY = "stoop-demo-db-v1";
 type Row = Record<string, any>;
 type DB = Record<string, Row[]>;
-const DEFAULTS: Record<string, Row> = { properties: { vacancy_pct: 5, is_condo_coop: false }, units: { monthly_rent: 0 }, expenses: { is_estimate: false } };
+const DEFAULTS: Record<string, Row> = { properties: { vacancy_pct: 5, is_condo_coop: false }, units: { monthly_rent: 0 }, expenses: { is_estimate: false }, maintenance_log: { cost: 0, counts_in_costs: true }, reminders: { done: false } };
 const DEMO_USER = { id: "demo-user", email: "demo@stoop.local", created_at: "2026-11-04T12:00:00Z", user_metadata: {} };
 
 function seed(): DB {
   const now = Date.now(), d = (h: number) => new Date(now - h * 36e5).toISOString();
   return {
-    profiles: [], terms_acceptances: [], properties: [], loans: [], expenses: [], units: [], property_snapshots: [], public_records_cache: [],
+    profiles: [], terms_acceptances: [], properties: [], loans: [], expenses: [], units: [], property_snapshots: [], reminders: [], maintenance_log: [], vacancies: [], rent_history: [], public_records_cache: [],
     news_items: [
       { id: "n1", url: "https://example.com/sample-1", title: "[Sample] Rent Guidelines Board schedules preliminary vote", source_name: "Sample feed", published_at: d(5), excerpt: "Placeholder headline for previewing the news page. Not a real article.", topics: ["rent-stabilization", "regulation"], score: 9, fetched_at: d(1) },
       { id: "n2", url: "https://example.com/sample-2", title: "[Sample] Brooklyn multifamily sales tick up in latest quarter", source_name: "Sample feed", published_at: d(30), excerpt: "Placeholder headline. Not a real article.", topics: ["market"], score: 6, fetched_at: d(1) },
@@ -22,7 +22,8 @@ let db: DB = load();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { /* ignore */ } };
 export const resetDemo = () => { db = seed(); save(); };
 
-const CASCADE: Record<string, string[]> = { properties: ["loans", "expenses", "units", "property_snapshots"] };
+const CASCADE: Record<string, string[]> = { properties: ["loans", "expenses", "units", "property_snapshots", "reminders", "maintenance_log", "vacancies", "rent_history"] };
+const UNIT_CHILDREN = ["vacancies", "rent_history"];
 
 class Query implements PromiseLike<{ data: any; error: { message: string } | null }> {
   private op: "select" | "insert" | "update" | "delete" = "select";
@@ -51,6 +52,7 @@ class Query implements PromiseLike<{ data: any; error: { message: string } | nul
     else if (this.op === "delete") {
       const gone = t.filter(match).map(r => r.id); db[this.table] = t.filter(r => !gone.includes(r.id));
       for (const child of CASCADE[this.table] ?? []) db[child] = (db[child] ?? []).filter(r => !gone.includes(r.property_id));
+      if (this.table === "units") for (const child of UNIT_CHILDREN) db[child] = (db[child] ?? []).filter(r => !gone.includes(r.unit_id));
     } else out = t.filter(match);
     save();
     if (this.op === "delete" || (this.op !== "select" && !this.returnRows)) return { data: null, error: null };

@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { listFor, listProperties, UnitRow } from "../lib/data";
 import { loadPrefs, savePrefs } from "../lib/prefs";
 import { lineFor } from "../lib/lines";
+import { ReminderRow, upcoming, dueText } from "../lib/owner";
 import { isRelevant } from "../../supabase/functions/_shared/relevance";
 
 interface Entry { key: string; letter: string; color: string; text: string; href?: string; to?: string; }
@@ -12,6 +13,8 @@ const DAY = 864e5;
 export default function UpdateBar() {
   const [show, setShow] = useState(loadPrefs().showBar);
   const [items, setItems] = useState<Entry[]>([]);
+  const [tick, setTick] = useState(0);
+  useEffect(() => { const f = () => setTick(t => t + 1); window.addEventListener("stoop-reminders", f); return () => window.removeEventListener("stoop-reminders", f); }, []);
   useEffect(() => { const f = () => setShow(loadPrefs().showBar); window.addEventListener("stoop-prefs", f); return () => window.removeEventListener("stoop-prefs", f); }, []);
   useEffect(() => {
     if (!show) return; let off = false;
@@ -27,6 +30,8 @@ export default function UpdateBar() {
           const [l, c] = lineFor(p.borough, p.address);
           out.push({ key: "u" + u.id, letter: l, color: c, text: `${p.nickname || p.address}, ${u.label}: lease ends in ${days} day${days === 1 ? "" : "s"}`, to: `/property/${p.id}` });
         }
+        const rem = upcoming(await listFor<ReminderRow>("reminders"), 30);
+        for (const r of rem) { const p = props.find(x => x.id === r.property_id); const [l, c] = p ? lineFor(p.borough, p.address) : ["R", "#6D6E71"]; out.push({ key: "r" + r.id, letter: l, color: c, text: `Reminder: ${r.title} (${dueText(r.due_date)})`, to: p ? `/property/${p.id}` : "/" }); }
       } catch { /* property alerts are optional */ }
       try {
         const { data } = await supabase.from("news_items").select("id,title,url,excerpt,source_name").gte("published_at", new Date(Date.now() - 7 * DAY).toISOString()).order("score", { ascending: false }).limit(60);
@@ -35,7 +40,7 @@ export default function UpdateBar() {
       if (!off) setItems(out);
     })();
     return () => { off = true; };
-  }, [show]);
+  }, [show, tick]);
   if (!show || items.length === 0) return null;
   const reps = Math.ceil(6 / items.length);
   const row = (suffix: string) => Array.from({ length: reps }, (_, r) => items.map(i => ({ ...i, key: i.key + r }))).flat().map(i => {
