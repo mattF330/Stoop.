@@ -147,3 +147,9 @@ aside>*{flex-shrink:0}aside .spacer{flex:1 0 12px}
 @media(max-width:560px){.legal h1{font-size:28px}.legalhead{padding:12px 16px}}
 
 .authback{display:block;font-size:13px;font-weight:700;margin-bottom:14px;color:var(--muted);text-decoration:none}.authback:hover{color:var(--ink);text-decoration:underline}
+/* Sign-in screen: fixed neutral look, not tied to the accent theme */
+.authwrap{--accent:#111}
+.authwrap .authlogo i{background:#8A8B8E;color:#fff}
+.authwrap button:not(.ghost){background:#111;color:#fff}
+.authwrap input:focus{border-color:#111;outline:2px solid rgba(17,17,17,.15)}
+.authwrap a{color:#111}
