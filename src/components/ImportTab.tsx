@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { insertMany, listProperties, listFor, PropertyRow, UnitRow } from "../lib/data";
 import { searchAddress } from "../lib/api";
 import { boroughOf } from "../lib/lines";
@@ -32,11 +32,11 @@ export function ImportPage() {
   const [resolved, setResolved] = useState<Resolved[] | null>(null); const [prog, setProg] = useState(""); const [busy, setBusy] = useState(false);
   const [kind, setKind] = useState<Kind>("properties"); const [grid, setGrid] = useState<string[][] | null>(null); const [header, setHeader] = useState(true);
   const [map, setMap] = useState<string[]>([]); const [paste, setPaste] = useState(""); const [err, setErr] = useState(""); const [msg, setMsg] = useState("");
-  const [off, setOff] = useState<Set<number>>(new Set()); const [monthly, setMonthly] = useState(false); const [assign, setAssign] = useState<Record<number, string>>({});
+  const [off, setOff] = useState<Set<number>>(new Set()); const [monthly, setMonthly] = useState(false); const [assign, setAssign] = useState<Record<number, string>>({}); const [newB, setNewB] = useState<Record<string, string>>({}); const [auto, setAuto] = useState(false); const addedNote = useRef("");
   const loadAll = () => Promise.all([listProperties(), listFor<UnitRow>("units")]).then(([p, u]) => { setProps(p); setUnits(u); }).catch(x => setErr((x as Error).message));
   useEffect(() => { loadAll(); }, []);
   const run = async (f: () => Promise<unknown>) => { setErr(""); setBusy(true); try { await f(); } catch (x) { setErr((x as Error).message); } setBusy(false); };
-  const reset = () => { setAssign({}); setResolved(null); setProg(""); setGrid(null); setMap([]); setOff(new Set()); setPaste(""); };
+  const reset = () => { setAssign({}); setNewB({}); setResolved(null); setProg(""); setGrid(null); setMap([]); setOff(new Set()); setPaste(""); };
   const load = (g: string[][]) => { if (g.length < 1) { setErr("That file is empty."); return; } if (g.length > MAX_ROWS + 1) { setErr(`Too many rows (${MAX_ROWS} max).`); return; } setErr(""); setMsg(""); setGrid(g); setAssign({}); setOff(new Set()); setMap(guessMapping(kind, g[0])); };
   const onFile = async (f: File | undefined) => {
     if (!f) return; setErr(""); if (f.size > 2 * 1024 * 1024) return setErr("File is too large (2 MB max).");
@@ -73,6 +73,26 @@ export function ImportPage() {
   const allAssigned = parsed.length > 0 && parsed.every((_, i) => Boolean(assign[i]));
   const missingRequired = FIELDS[kind].filter(f => f.required && !map.includes(f.key) && !(f.key === "property" && allAssigned));
 
+  // Addresses in this sheet that aren't in the portfolio yet (offered to add them first).
+  const missingAddrs = (() => { const m = new Map<string, string>(); if (kind !== "properties") parsed.forEach((p, i) => { const n = String(p.row.property ?? "").trim(); if (n && !assign[i] && placed[i].needsPick && placed[i].extra.some(x => x.includes("isn’t in your portfolio"))) m.set(n.toLowerCase(), n); }); return [...m.entries()]; })();
+  const addMissing = () => run(async () => {
+    const u = await uid(); const made: { key: string; label: string; bbl: string | null }[] = []; const rowsOut: object[] = []; const skipped: string[] = [];
+    for (const [key, name] of missingAddrs) {
+      const b = newB[key] || null; let c: Awaited<ReturnType<typeof searchAddress>>["candidates"][number] | undefined;
+      try { c = pickCandidate((await searchAddress(name + (b && !name.toLowerCase().includes(b.toLowerCase()) ? `, ${b}` : ""))).candidates, name, b); } catch { /* handled below */ }
+      if (!c && !b) { skipped.push(name); continue; }
+      const label = c?.label ?? name; made.push({ key, label, bbl: c?.bbl ?? null });
+      rowsOut.push({ user_id: u, address: label, borough: c?.borough ?? b, bbl: c?.bbl ?? null, bin: c?.bin ?? null });
+    }
+    if (!made.length) { setErr(`Couldn’t find ${skipped.join(", ")} in city records. Choose a borough next to ${skipped.length === 1 ? "it" : "each"} and try again.`); return; }
+    await insertMany("properties", rowsOut);
+    const fresh = await listProperties(); setProps(fresh);
+    const idFor: Record<string, string> = {};
+    for (const m of made) { const f = fresh.find(p => (m.bbl && p.bbl === m.bbl) || p.address === m.label); if (f) idFor[m.key] = f.id; }
+    const next = { ...assign }; parsed.forEach((p, i) => { const k = String(p.row.property ?? "").trim().toLowerCase(); if (idFor[k]) next[i] = idFor[k]; });
+    setAssign(next); addedNote.current = `Added ${made.length} new propert${made.length === 1 ? "y" : "ies"}${skipped.length ? ` (couldn’t find ${skipped.join(", ")})` : ""}. `; setAuto(true);
+  });
+  useEffect(() => { if (auto) { setAuto(false); if (toSave.length) void save(); } }, [auto]);
   const lookup = () => run(async () => {
     const existing = await listProperties(); const seenBbl = new Set(existing.map(p => p.bbl).filter(Boolean)); const seenAddr = new Set(existing.map(p => p.address.toLowerCase()));
     const rows = toSave.slice(0, MAX_PROPS).map(i => parsed[i]); const out: Resolved[] = new Array(rows.length); let done = 0, next = 0;
@@ -107,7 +127,7 @@ export function ImportPage() {
       }
     });
     await insertMany(TABLE[k], rows);
-    setMsg(`Imported ${rows.length} row${rows.length === 1 ? "" : "s"}${dupCount ? `; skipped ${dupCount} unit${dupCount === 1 ? "" : "s"} that already exist` : ""}. Nothing else from the file was kept.`); reset(); loadAll();
+    setMsg(addedNote.current + `Imported ${rows.length} row${rows.length === 1 ? "" : "s"}${dupCount ? `; skipped ${dupCount} unit${dupCount === 1 ? "" : "s"} that already exist` : ""}. Nothing else from the file was kept.`); addedNote.current = ""; addedNote.current = ""; reset(); loadAll();
   });
   const shown = parsed.slice(0, 60);
   return (<><h1>Import from a spreadsheet</h1><div className="card">
@@ -129,6 +149,9 @@ export function ImportPage() {
         <tbody>{shown.map((p, i) => { const pr = problemsOf(i); return <tr key={i} style={{ opacity: pr.length ? 0.55 : 1 }}>
           <td><input type="checkbox" style={{ width: "auto" }} disabled={pr.length > 0} checked={pr.length === 0 && !off.has(i)} onChange={e => setOff(s => { const n = new Set(s); e.target.checked ? n.delete(i) : n.add(i); return n; })} aria-label={`Include row ${p.line}`} /></td>
           {body[i].map((c, ci) => <td key={ci}>{ci < heads.length ? c : null}</td>)}<td className="note" style={{ margin: 0 }}>{kind !== "properties" && props.length > 0 && <select aria-label={`Property for row ${p.line}`} value={assign[i] ?? ""} onChange={e => setAssign(a => { const n = { ...a }; if (e.target.value) n[i] = e.target.value; else delete n[i]; return n; })}><option value="">{placed[i].pid || placed[i].portfolio ? "Change property…" : "Choose property…"}</option>{kind === "reminders" && <option value="portfolio">Whole portfolio</option>}{props.map(x => <option key={x.id} value={x.id}>{x.nickname || x.address}</option>)}</select>} {pr.length ? pr.join("; ") : isDup(i) ? "Already exists, will skip" : (kind === "properties" ? "OK" : `OK → ${placed[i].pname}`) + (parsed[i].warnings.length ? ` (${parsed[i].warnings.join("; ")})` : "")}</td></tr>; })}</tbody></table></div>
+      {kind !== "properties" && missingAddrs.length > 0 && <div className="card" style={{ marginTop: 12 }}><p><b>{missingAddrs.length} address{missingAddrs.length === 1 ? " isn’t" : "es aren’t"} in your portfolio yet.</b> Rambl can add {missingAddrs.length === 1 ? "it" : "them"} from NYC records, then import all of this file’s rows onto {missingAddrs.length === 1 ? "it" : "them"}.</p>
+        {missingAddrs.map(([k, n]) => <p key={k} className="row" style={{ margin: "4px 0" }}><span>{n}</span> <select aria-label={`Borough for ${n}`} value={newB[k] ?? ""} onChange={e => setNewB(b => ({ ...b, [k]: e.target.value }))}><option value="">Borough (only if the city can’t find it)</option>{BOROUGHS.map(b => <option key={b}>{b}</option>)}</select></p>)}
+        <p><button disabled={busy} onClick={addMissing}>Add {missingAddrs.length} propert{missingAddrs.length === 1 ? "y" : "ies"} and import all rows</button> <span className="note">Properties are matched by GeoSearch and can be edited afterward. Only the address is saved from the city lookup.</span></p></div>}
       {kind !== "properties" && props.length > 0 && parsed.length > 0 && <p className="note">Assign every row to one property: <select aria-label="Assign all rows to a property" value="" onChange={e => { const v = e.target.value; if (v) setAssign(Object.fromEntries(parsed.map((_, i) => [i, v]))); }}><option value="">Choose property…</option>{kind === "reminders" && <option value="portfolio">Whole portfolio</option>}{props.map(x => <option key={x.id} value={x.id}>{x.nickname || x.address}</option>)}</select></p>}
       {parsed.length > 60 && <p className="note">Showing the first 60 of {parsed.length} rows. All rows without problems will be imported.</p>}
       {missingRequired.length > 0 && <p className="err">Match a column to: {missingRequired.map(f => f.label).join(", ")}.</p>}
