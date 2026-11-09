@@ -16,7 +16,7 @@ export const SOURCES: Record<SourceId, Source> = {
 export const GLOBAL_DISCLAIMER =
   "Rambl shows public records and third-party data. It may be incomplete, delayed or wrong. Verify with the original source before making financial or legal decisions. Not financial, legal or tax advice.";
 
-export const TERMS_VERSION = "2026-11-v2";
+export const TERMS_VERSION = "2026-11-v3";
 
 export function sourceTag(id: SourceId, asOf?: string | Date | null): string {
   const s = SOURCES[id];

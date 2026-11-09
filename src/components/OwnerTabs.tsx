@@ -5,6 +5,8 @@ import { toLoan } from "../lib/data";
 import { amortSchedule, payoffDate, yearly, refinance, SchedRow } from "../lib/loans";
 import { MaintRow, VacancyRow, ReminderRow, RentHistRow, REMINDER_KINDS, today, vacancyDays, lostRent, vacancyTotals, yearRange, maintenanceTotal, trailingMaintenance, upcoming, dueText, describeChange, daysBetween } from "../lib/owner";
 import { downloadCsv } from "../lib/csv";
+import { NYC_TEMPLATES } from "../lib/nycTemplates";
+import { addMonths } from "../lib/loans";
 import { supabase } from "../lib/supabase";
 import { EstimateBadge } from "./Disclaimers";
 
@@ -27,7 +29,7 @@ export function MaintenanceTab({ propertyId, log, run }: { propertyId: string; l
     <table><thead><tr><th>Date</th><th>What</th><th>Contractor</th><th>Cost</th><th>In costs?</th><th /></tr></thead><tbody>
       {sorted.map(e => <tr key={e.id}><td>{e.logged_on}</td><td>{e.title}{e.notes && <div className="note" style={{ margin: 0 }}>{e.notes}</div>}</td><td>{e.contractor || "—"}</td><td>{fmtMoney(Number(e.cost))}</td>
         <td><input type="checkbox" style={{ width: "auto" }} checked={e.counts_in_costs} aria-label="Counts in operating costs" onChange={x => run(() => updateRow("maintenance_log", e.id, { counts_in_costs: x.target.checked }))} /></td>
-        <td><button className="ghost" onClick={() => run(() => deleteRow("maintenance_log", e.id))}>×</button></td></tr>)}</tbody></table>
+        <td><button className="sm ghost" title="Add the same entry again, dated today" onClick={() => run(async () => insertRow("maintenance_log", { user_id: await uid(), property_id: propertyId, logged_on: today(), title: e.title, contractor: e.contractor, category: e.category, cost: e.cost, counts_in_costs: e.counts_in_costs, notes: e.notes }))}>Log again</button><button className="ghost" onClick={() => run(() => deleteRow("maintenance_log", e.id))}>×</button></td></tr>)}</tbody></table>
     {!sorted.length && <p className="note">No entries yet. Log repairs, who did the work, and what it cost.</p>}
     <Form onSubmit={() => { run(async () => insertRow("maintenance_log", { user_id: await uid(), property_id: propertyId, logged_on: v.logged_on, title: v.title, contractor: v.contractor || null, category: v.category || null, cost: num(v.cost), counts_in_costs: v.counts, notes: v.notes || null })); s({ ...v, title: "", contractor: "", cost: "", notes: "" }); }}>
       <Field l="Date"><input type="date" required value={v.logged_on} onChange={e => s({ ...v, logged_on: e.target.value })} /></Field>
@@ -73,7 +75,7 @@ export function VacancyTab({ propertyId, units, vacs, run }: { propertyId: strin
 /* ---------- Reminders (dates the owner sets) ---------- */
 export function RemindersPanel({ propertyId, title = "Reminders" }: { propertyId?: string; title?: string }) {
   const [list, setList] = useState<ReminderRow[] | null>(null); const [props, setProps] = useState<PropertyRow[]>([]); const [err, setErr] = useState("");
-  const [v, s] = useState({ kind: "other" as ReminderRow["kind"], title: "", due_date: "", notes: "", property_id: propertyId ?? "" });
+  const [v, s] = useState({ kind: "other" as ReminderRow["kind"], title: "", due_date: "", notes: "", property_id: propertyId ?? "", repeat: "none" as ReminderRow["repeat"] });
   const [units, setUnits] = useState<UnitRow[]>([]);
   const load = async () => { try { const [r, p, u] = await Promise.all([listFor<ReminderRow>("reminders", propertyId), listProperties(), listFor<UnitRow>("units", propertyId)]); setList(r); setProps(p); setUnits(u); } catch (x) { setErr((x as Error).message); } };
   useEffect(() => { load(); }, [propertyId]);
@@ -85,18 +87,20 @@ export function RemindersPanel({ propertyId, title = "Reminders" }: { propertyId
   return (<div className="card"><h2>{title}</h2>
     {err && <p className="err">{err}</p>}
     <table><tbody>
-      {open.map(r => { const late = r.due_date < today(); return <tr key={r.id}><td><b>{r.title}</b><div className="note" style={{ margin: 0 }}>{REMINDER_KINDS[r.kind]}{!propertyId && " · " + name(r.property_id)}{r.notes && " · " + r.notes}</div></td>
+      {open.map(r => { const late = r.due_date < today(); return <tr key={r.id}><td><b>{r.title}</b><div className="note" style={{ margin: 0 }}>{REMINDER_KINDS[r.kind]}{r.repeat && r.repeat !== "none" ? ` · repeats ${r.repeat}` : ""}{!propertyId && " · " + name(r.property_id)}{r.notes && " · " + r.notes}</div></td>
         <td style={{ color: late ? "var(--bad)" : undefined }}>{r.due_date}<div className="note" style={{ margin: 0, color: "inherit" }}>{dueText(r.due_date)}</div></td>
-        <td><button className="sm" onClick={() => act(() => updateRow("reminders", r.id, { done: true }))}>Done</button><button className="ghost" onClick={() => act(() => deleteRow("reminders", r.id))}>×</button></td></tr>; })}
+        <td><button className="sm" onClick={() => act(async () => { await updateRow("reminders", r.id, { done: true }); if (r.repeat && r.repeat !== "none") await insertRow("reminders", { user_id: await uid(), property_id: r.property_id, kind: r.kind, title: r.title, due_date: addMonths(r.due_date, r.repeat === "monthly" ? 1 : r.repeat === "quarterly" ? 3 : 12), notes: r.notes, repeat: r.repeat }); })}>Done</button><button className="ghost" onClick={() => act(() => deleteRow("reminders", r.id))}>×</button></td></tr>; })}
       {leases.sort((x, y) => x.due.localeCompare(y.due)).map(l => <tr key={l.id}><td>{l.label}<div className="note" style={{ margin: 0 }}>From your rent roll (leases ending within a year)</div></td><td>{l.due}<div className="note" style={{ margin: 0 }}>{dueText(l.due)}</div></td><td /></tr>)}</tbody></table>
     {!open.length && !leases.length && <p className="note">Nothing set. Add dates you want to be reminded about, like an insurance renewal or an inspection.</p>}
-    <Form onSubmit={() => { act(async () => insertRow("reminders", { user_id: await uid(), property_id: (propertyId ?? v.property_id) || null, kind: v.kind, title: v.title, due_date: v.due_date, notes: v.notes || null })); s({ ...v, title: "", due_date: "", notes: "" }); }}>
+    <Form onSubmit={() => { act(async () => insertRow("reminders", { user_id: await uid(), property_id: (propertyId ?? v.property_id) || null, kind: v.kind, title: v.title, due_date: v.due_date, notes: v.notes || null, repeat: v.repeat })); s({ ...v, title: "", due_date: "", notes: "", repeat: "none", kind: "other" }); }}>
+      <Field l="Start from a common item"><select value="" onChange={e => { const t = NYC_TEMPLATES.find(x => x.id === e.target.value); if (t) s({ ...v, title: t.title, kind: t.kind, repeat: t.repeat, notes: t.hint }); }}><option value="">— choose (optional) —</option>{NYC_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}</select></Field>
       <Field l="Type"><select value={v.kind} onChange={e => s({ ...v, kind: e.target.value as ReminderRow["kind"] })}>{Object.entries(REMINDER_KINDS).map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></Field>
       <Field l="Title"><input required value={v.title} placeholder="e.g. Renew building insurance" onChange={e => s({ ...v, title: e.target.value })} /></Field>
       <Field l="Date"><input type="date" required value={v.due_date} onChange={e => s({ ...v, due_date: e.target.value })} /></Field>
       {!propertyId && <Field l="Property"><select value={v.property_id} onChange={e => s({ ...v, property_id: e.target.value })}><option value="">Whole portfolio</option>{props.map(p => <option key={p.id} value={p.id}>{p.nickname || p.address}</option>)}</select></Field>}
+      <Field l="Repeats"><select value={v.repeat} onChange={e => s({ ...v, repeat: e.target.value as ReminderRow["repeat"] })}><option value="none">Doesn’t repeat</option><option value="monthly">Monthly</option><option value="quarterly">Every 3 months</option><option value="yearly">Yearly</option></select></Field>
       <Field l="Notes"><input value={v.notes} onChange={e => s({ ...v, notes: e.target.value })} /></Field></Form>
-    <p className="note">Rambl only reminds you of dates <b>you</b> enter. It doesn’t know which deadlines or filings apply to you or the law’s requirements; check with your attorney, accountant, lender or insurer.</p>
+    <p className="note">The “common item” list only fills in a name and a note. <b>It does not know your deadlines</b>: you enter every date, and you should confirm what applies to your building with your attorney, accountant or the agency (<a href="https://www.nyc.gov/site/hpd/index.page" target="_blank" rel="noreferrer">HPD</a>, <a href="https://hcr.ny.gov/rent-registration" target="_blank" rel="noreferrer">DHCR</a>). When you mark a repeating reminder done, the next one is created for you to check. Rambl only reminds you of dates <b>you</b> enter. It doesn’t know which deadlines or filings apply to you or the law’s requirements; check with your attorney, accountant, lender or insurer.</p>
     {done.length > 0 && <details><summary className="note">Completed ({done.length})</summary><table><tbody>{done.map(r => <tr key={r.id}><td>{r.title}</td><td>{r.due_date}</td><td><button className="ghost sm" onClick={() => act(() => updateRow("reminders", r.id, { done: false }))}>Reopen</button><button className="ghost" onClick={() => act(() => deleteRow("reminders", r.id))}>×</button></td></tr>)}</tbody></table></details>}
   </div>);
 }

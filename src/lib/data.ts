@@ -10,9 +10,10 @@ export const toLoan = (l: LoanRow): Loan => ({ principal: Number(l.principal), r
 const must = <T,>(r: { data: T | null; error: { message: string } | null }): T => { if (r.error) throw new Error(r.error.message); return r.data as T; };
 export const listProperties = async () => must(await supabase.from("properties").select("*").order("created_at")) as PropertyRow[];
 export const getProperty = async (id: string) => must(await supabase.from("properties").select("*").eq("id", id).single()) as PropertyRow;
-export const listFor = async <T,>(table: "loans" | "expenses" | "units" | "maintenance_log" | "vacancies" | "rent_history" | "reminders", propertyId?: string) => {
+export const listFor = async <T,>(table: "loans" | "expenses" | "units" | "maintenance_log" | "vacancies" | "rent_history" | "reminders" | "capital_items", propertyId?: string) => {
   let q = supabase.from(table).select("*"); if (propertyId) q = q.eq("property_id", propertyId); return must(await q) as T[];
 };
 export async function insertRow(table: string, row: object) { const r = await supabase.from(table).insert(row).select().single(); return must(r) as any; }
+export async function insertMany(table: string, rows: object[]) { if (!rows.length) return; const r = await supabase.from(table).insert(rows); if (r.error) throw new Error(r.error.message); }
 export async function deleteRow(table: string, id: string) { const r = await supabase.from(table).delete().eq("id", id); if (r.error) throw new Error(r.error.message); }
 export async function updateRow(table: string, id: string, patch: object) { const r = await supabase.from(table).update(patch).eq("id", id); if (r.error) throw new Error(r.error.message); }

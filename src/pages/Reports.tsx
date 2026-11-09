@@ -4,10 +4,11 @@ import { listProperties, listFor, toLoan, PropertyRow, LoanRow, ExpenseRow, Unit
 import { propertyMetrics, loanStatus, fmtMoney } from "../lib/finance";
 import { MaintRow, VacancyRow, RentHistRow, trailingMaintenance, vacancyTotals, yearRange, today } from "../lib/owner";
 import { yearEnd, propName, YearEnd } from "../lib/reports";
+import { CapItem, plan as capPlan, totals as capTotals } from "../lib/reserves";
 import { downloadCsv } from "../lib/csv";
 import { EstimateBadge } from "../components/Disclaimers";
 
-interface All { props: PropertyRow[]; loans: LoanRow[]; exp: ExpenseRow[]; units: UnitRow[]; maint: MaintRow[]; vacs: VacancyRow[]; hist: RentHistRow[]; }
+interface All { props: PropertyRow[]; loans: LoanRow[]; exp: ExpenseRow[]; units: UnitRow[]; maint: MaintRow[]; vacs: VacancyRow[]; hist: RentHistRow[]; caps: CapItem[]; }
 const by = <T extends { property_id: string }>(l: T[], id: string) => l.filter(x => x.property_id === id);
 const money = (n: number) => fmtMoney(n);
 
@@ -17,8 +18,8 @@ export default function Reports() {
   const [year, setYear] = useState(new Date().getFullYear() - (new Date().getMonth() < 3 ? 1 : 0));
   const [sel, setSel] = useState(q.get("property") ?? "all"); const [forWho, setForWho] = useState(""); const [tenants, setTenants] = useState(false);
   useEffect(() => { (async () => { try {
-    const [props, loans, exp, units, maint, vacs, hist] = await Promise.all([listProperties(), listFor<LoanRow>("loans"), listFor<ExpenseRow>("expenses"), listFor<UnitRow>("units"), listFor<MaintRow>("maintenance_log"), listFor<VacancyRow>("vacancies"), listFor<RentHistRow>("rent_history")]);
-    setD({ props, loans, exp, units, maint, vacs, hist }); } catch (e) { setErr((e as Error).message); } })(); }, []);
+    const [props, loans, exp, units, maint, vacs, hist, caps] = await Promise.all([listProperties(), listFor<LoanRow>("loans"), listFor<ExpenseRow>("expenses"), listFor<UnitRow>("units"), listFor<MaintRow>("maintenance_log"), listFor<VacancyRow>("vacancies"), listFor<RentHistRow>("rent_history"), listFor<CapItem>("capital_items")]);
+    setD({ props, loans, exp, units, maint, vacs, hist, caps }); } catch (e) { setErr((e as Error).message); } })(); }, []);
   const ye = useMemo(() => d ? d.props.map(p => ({ p, y: yearEnd({ loans: by(d.loans, p.id), expenses: by(d.exp, p.id), units: by(d.units, p.id), vacancies: by(d.vacs, p.id), history: by(d.hist, p.id), maint: by(d.maint, p.id) }, year) })) : [], [d, year]);
   if (err) return <p className="err">{err}</p>; if (!d) return <p>Loading…</p>;
   const thisYear = new Date().getFullYear(); const years = [thisYear, thisYear - 1, thisYear - 2, thisYear - 3];
@@ -84,6 +85,7 @@ function OnePager({ p, d, forWho, tenants }: { p: PropertyRow; d: All; forWho: s
       <tr style={{ fontWeight: 600 }}><td>Total ({units.length} units)</td>{tenants && <td />}<td>{money(units.reduce((s, u) => s + Number(u.monthly_rent), 0))}</td><td /></tr></tbody></table>
     <div className="rep-cols"><div><h3>Loans (calculated)</h3>{loans.length ? <table><thead><tr><th>Lender</th><th>Rate</th><th>Est. balance</th><th>Pmt/mo</th></tr></thead><tbody>{loans.map(l => { const s = loanStatus(toLoan(l)); return <tr key={l.id}><td>{l.lender || "—"}</td><td>{l.rate_pct}%</td><td>{money(s.balance)}</td><td>{money(s.payment)}</td></tr>; })}</tbody></table> : <p className="note">No loans entered.</p>}</div>
       <div><h3>Operating costs / yr</h3><table><tbody>{exp.map(e => <tr key={e.id}><td>{e.category}</td><td>{money(Number(e.annual_amount))}</td></tr>)}{trailingMaintenance(maint, p.id) > 0 && <tr><td>Repairs logged (last 12 mo)</td><td>{money(trailingMaintenance(maint, p.id))}</td></tr>}</tbody></table></div></div>
+    {by(d.caps, p.id).length > 0 && <><h3>Capital reserve plan (owner estimates)</h3><table><thead><tr><th>Item</th><th>Installed</th><th>Replace around</th><th>Cost</th><th>Saved</th><th>Set aside / mo</th></tr></thead><tbody>{by(d.caps, p.id).map(i => { const q = capPlan(i); return <tr key={i.id}><td>{i.name}</td><td>{i.installed_year}</td><td>{q.replaceYear}</td><td>{money(Number(i.replacement_cost))}</td><td>{money(Number(i.saved_so_far))}</td><td>{money(q.monthly)}</td></tr>; })}<tr style={{ fontWeight: 600 }}><td colSpan={5}>Suggested total</td><td>{money(capTotals(by(d.caps, p.id)).monthly)}</td></tr></tbody></table></>}
     <p className="note">Vacancy logged in {yr}: {Math.round(vt.days)} days, about {money(vt.lost)} in lost rent (estimate).</p>
     <p className="note rep-disc">Prepared by the property owner using Rambl from figures the owner entered. Values, balances and metrics are owner-entered or calculated estimates, not an appraisal, audit, financial statement or tax document. NYC public-record details come from city agencies and may not be 100% accurate. Verify before relying on this summary.</p>
   </div>);

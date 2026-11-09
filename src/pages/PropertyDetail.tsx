@@ -5,21 +5,24 @@ import { propertyMetrics, loanStatus, fmtMoney } from "../lib/finance";
 import { supabase } from "../lib/supabase";
 import { relevantNews, NewsLite } from "../lib/alerts";
 import { isRelevant } from "../../supabase/functions/_shared/relevance";
+import { ReservesTab } from "../components/Reserves";
+import { ImportTab } from "../components/ImportTab";
+import { CapItem } from "../lib/reserves";
 import { MaintenanceTab, VacancyTab, RemindersPanel, LoanSchedule, UnitEditor, UnitHistory } from "../components/OwnerTabs";
 import { MaintRow, VacancyRow, RentHistRow, trailingMaintenance } from "../lib/owner";
 import { Link } from "react-router-dom";
 import { SourceTag, SectionNote, EstimateBadge } from "../components/Disclaimers";
 
-type Tab = "overview" | "debt" | "costs" | "units" | "maintenance" | "vacancy" | "reminders";
-const TAB_LABEL: Record<Tab, string> = { overview: "Overview", debt: "Debt", costs: "Costs", units: "Units", maintenance: "Maintenance", vacancy: "Vacancy", reminders: "Reminders" };
+type Tab = "overview" | "debt" | "costs" | "units" | "maintenance" | "vacancy" | "reminders" | "reserves" | "import";
+const TAB_LABEL: Record<Tab, string> = { overview: "Overview", debt: "Debt", costs: "Costs", units: "Units", maintenance: "Maintenance", vacancy: "Vacancy", reminders: "Reminders", reserves: "Reserves", import: "Import" };
 const uid = async () => (await supabase.auth.getUser()).data.user!.id;
 
 export default function PropertyDetail() {
   const { id } = useParams(); const nav = useNavigate();
   const [p, setP] = useState<PropertyRow | null>(null); const [loans, setLoans] = useState<LoanRow[]>([]); const [exp, setExp] = useState<ExpenseRow[]>([]); const [units, setUnits] = useState<UnitRow[]>([]);
-  const [maint, setMaint] = useState<MaintRow[]>([]); const [vacs, setVacs] = useState<VacancyRow[]>([]); const [hist, setHist] = useState<RentHistRow[]>([]); const [editing, setEditing] = useState<string | null>(null); const [showHist, setShowHist] = useState<string | null>(null);
+  const [caps, setCaps] = useState<CapItem[]>([]); const [maint, setMaint] = useState<MaintRow[]>([]); const [vacs, setVacs] = useState<VacancyRow[]>([]); const [hist, setHist] = useState<RentHistRow[]>([]); const [editing, setEditing] = useState<string | null>(null); const [showHist, setShowHist] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview"); const [err, setErr] = useState("");
-  const load = useCallback(async () => { try { const [a, l, e, u, mt, vc, hs] = await Promise.all([getProperty(id!), listFor<LoanRow>("loans", id), listFor<ExpenseRow>("expenses", id), listFor<UnitRow>("units", id), listFor<MaintRow>("maintenance_log", id), listFor<VacancyRow>("vacancies", id), listFor<RentHistRow>("rent_history", id)]); setP(a); setLoans(l); setExp(e); setUnits(u); setMaint(mt); setVacs(vc); setHist(hs); } catch (x) { setErr((x as Error).message); } }, [id]);
+  const load = useCallback(async () => { try { const [a, l, e, u, mt, vc, hs, cp] = await Promise.all([getProperty(id!), listFor<LoanRow>("loans", id), listFor<ExpenseRow>("expenses", id), listFor<UnitRow>("units", id), listFor<MaintRow>("maintenance_log", id), listFor<VacancyRow>("vacancies", id), listFor<RentHistRow>("rent_history", id), listFor<CapItem>("capital_items", id)]); setP(a); setLoans(l); setExp(e); setUnits(u); setMaint(mt); setVacs(vc); setHist(hs); setCaps(cp); } catch (x) { setErr((x as Error).message); } }, [id]);
   useEffect(() => { load(); }, [load]);
   const run = async (f: () => Promise<unknown>) => { setErr(""); try { await f(); await load(); } catch (x) { setErr((x as Error).message); } };
   if (err && !p) return <p className="err">{err}</p>; if (!p) return <p>Loading…</p>;
@@ -68,6 +71,8 @@ export default function PropertyDetail() {
 
     {tab === "maintenance" && <MaintenanceTab propertyId={p.id} log={maint} run={run} />}
     {tab === "vacancy" && <VacancyTab propertyId={p.id} units={units} vacs={vacs} run={run} />}
+    {tab === "reserves" && <ReservesTab propertyId={p.id} items={caps} run={run} />}
+    {tab === "import" && <ImportTab propertyId={p.id} existingUnits={units.map(u => u.label.toLowerCase())} run={run} />}
     {tab === "reminders" && <RemindersPanel propertyId={p.id} title="Reminders for this property" />}
   </>);
 }

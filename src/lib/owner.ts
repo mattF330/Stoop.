@@ -1,7 +1,7 @@
 // Helpers for the owner's own records: vacancies, maintenance log, reminders, rent history.
 export interface VacancyRow { id: string; property_id: string; unit_id: string; start_date: string; end_date: string | null; monthly_rent: number; notes: string | null; }
 export interface MaintRow { id: string; property_id: string; logged_on: string; title: string; contractor: string | null; category: string | null; cost: number; counts_in_costs: boolean; notes: string | null; }
-export interface ReminderRow { id: string; property_id: string | null; kind: "insurance" | "rate_reset" | "inspection" | "other"; title: string; due_date: string; notes: string | null; done: boolean; }
+export interface ReminderRow { id: string; property_id: string | null; kind: "insurance" | "rate_reset" | "inspection" | "other"; title: string; due_date: string; notes: string | null; done: boolean; repeat?: "none" | "monthly" | "quarterly" | "yearly"; }
 export interface RentHistRow { id: string; property_id: string; unit_id: string; effective_date: string; monthly_rent: number; tenant_name: string | null; lease_end: string | null; note: string | null; created_at?: string; }
 
 export const REMINDER_KINDS: Record<ReminderRow["kind"], string> = { insurance: "Insurance renewal", rate_reset: "Loan rate reset", inspection: "Inspection", other: "Other" };
