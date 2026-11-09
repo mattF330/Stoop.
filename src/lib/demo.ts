@@ -69,6 +69,7 @@ function invoke(_name: string, opts: { body: any }) {
   const b = opts.body ?? {};
   if (b.mode === "search") {
     const t = String(b.text ?? "").trim();
+    if (/nomatch/i.test(t)) return Promise.resolve({ data: { candidates: [], fetchedAt: new Date().toISOString() }, error: null });
     return Promise.resolve({ data: { candidates: [
       { label: `${t} (DEMO match), Brooklyn, NY`, bbl: "3000010001", borough: "Brooklyn", bin: "3000001", lat: 40.69, lng: -73.99 },
       { label: `${t} (DEMO match), Queens, NY`, bbl: "4000010002", borough: "Queens", bin: "4000002", lat: 40.73, lng: -73.8 }], fetchedAt: new Date().toISOString() }, error: null });

@@ -4,7 +4,7 @@ import { insertMany, listProperties, listFor, PropertyRow, UnitRow } from "../li
 import { searchAddress } from "../lib/api";
 import { boroughOf } from "../lib/lines";
 import { supabase } from "../lib/supabase";
-import { FIELDS, Kind, parseCsv, guessMapping, buildRows, TEMPLATES, BLOCKED_HEADER } from "../lib/import";
+import { FIELDS, Kind, parseCsv, guessMapping, buildRows, TEMPLATES, BLOCKED_HEADER, BOROUGHS } from "../lib/import";
 
 const uid = async () => (await supabase.auth.getUser()).data.user!.id;
 const KIND_LABEL: Record<Kind, string> = { properties: "Properties (several buildings at once)", units: "Units & rents (rent roll)", expenses: "Yearly operating expenses", maintenance: "Maintenance / repair records" };
@@ -43,7 +43,7 @@ export function ImportPage() {
     const work = async () => { while (next < rows.length) { const i = next++; const r = rows[i].row; const q = r.address + (r.borough && !r.address.toLowerCase().includes(r.borough.toLowerCase()) ? `, ${r.borough}` : "");
       let res: Resolved = { line: rows[i].line, input: r.address, label: r.address, bbl: null, bin: null, borough: r.borough ?? boroughOf(null, r.address), matched: false, row: r, note: "", ok: true };
       try { const c = (await searchAddress(q)).candidates[0]; if (c) res = { ...res, label: c.label, bbl: c.bbl, bin: c.bin, borough: c.borough ?? res.borough, matched: true }; } catch { /* fall back to manual below */ }
-      if (!res.matched) { res.note = res.borough ? "No city match; will be added as typed" : "No city match and no borough; add a Borough column"; res.ok = Boolean(res.borough); }
+      if (!res.matched) { res.note = res.borough ? "No city match; will be added as typed" : "No city match. Choose a borough to add it"; res.ok = Boolean(res.borough); }
       else if ((res.bbl && seenBbl.has(res.bbl)) || seenAddr.has(res.label.toLowerCase())) { res.note = "Already in your portfolio, skipping"; res.ok = false; }
       else { if (res.bbl) seenBbl.add(res.bbl); seenAddr.add(res.label.toLowerCase()); }
       out[i] = res; setProg(`Looking up addresses… ${++done} of ${rows.length}`); } };
@@ -96,5 +96,5 @@ function ResolvedTable({ list, setList }: { list: Resolved[]; setList: (l: Resol
   return (<div style={{ overflowX: "auto", marginTop: 12 }}><p className="note">Check each match. Untick anything that looks wrong; you can also add it by hand later.</p>
     <table><thead><tr><th /><th>You entered</th><th>Matched to</th><th>Borough</th><th>Status</th></tr></thead><tbody>{list.map((r, i) => <tr key={i} style={{ opacity: r.ok ? 1 : 0.55 }}>
       <td><input type="checkbox" style={{ width: "auto" }} checked={r.ok} disabled={r.note.startsWith("Already") || (!r.matched && !r.borough)} onChange={e => setList(list.map((x, j) => (j === i ? { ...x, ok: e.target.checked } : x)))} aria-label={`Include ${r.input}`} /></td>
-      <td>{r.input}</td><td>{r.matched ? r.label : "—"}</td><td>{r.borough ?? "—"}</td><td className="note" style={{ margin: 0 }}>{r.note || (r.matched ? "City record found" : "")}</td></tr>)}</tbody></table></div>);
+      <td>{r.input}</td><td>{r.matched ? r.label : "—"}</td><td>{r.matched ? r.borough ?? "—" : <select aria-label={`Borough for ${r.input}`} value={r.borough ?? ""} onChange={e => { const b = e.target.value || null; setList(list.map((x, j) => (j === i ? { ...x, borough: b, ok: Boolean(b), note: b ? "No city match; will be added as typed" : "No city match. Choose a borough to add it" } : x))); }}><option value="">Choose borough</option>{BOROUGHS.map(b => <option key={b}>{b}</option>)}</select>}</td><td className="note" style={{ margin: 0 }}>{r.note || (r.matched ? "City record found" : "")}</td></tr>)}</tbody></table></div>);
 }
