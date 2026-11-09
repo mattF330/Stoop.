@@ -26,12 +26,12 @@ export function ImportPage() {
   const [resolved, setResolved] = useState<Resolved[] | null>(null); const [prog, setProg] = useState(""); const [busy, setBusy] = useState(false);
   const [kind, setKind] = useState<Kind>("properties"); const [grid, setGrid] = useState<string[][] | null>(null); const [header, setHeader] = useState(true);
   const [map, setMap] = useState<string[]>([]); const [paste, setPaste] = useState(""); const [err, setErr] = useState(""); const [msg, setMsg] = useState("");
-  const [off, setOff] = useState<Set<number>>(new Set()); const [monthly, setMonthly] = useState(false);
+  const [off, setOff] = useState<Set<number>>(new Set()); const [monthly, setMonthly] = useState(false); const [assign, setAssign] = useState<Record<number, string>>({});
   const loadAll = () => Promise.all([listProperties(), listFor<UnitRow>("units")]).then(([p, u]) => { setProps(p); setUnits(u); }).catch(x => setErr((x as Error).message));
   useEffect(() => { loadAll(); }, []);
   const run = async (f: () => Promise<unknown>) => { setErr(""); setBusy(true); try { await f(); } catch (x) { setErr((x as Error).message); } setBusy(false); };
-  const reset = () => { setResolved(null); setProg(""); setGrid(null); setMap([]); setOff(new Set()); setPaste(""); };
-  const load = (g: string[][]) => { if (g.length < 1) { setErr("That file is empty."); return; } if (g.length > MAX_ROWS + 1) { setErr(`Too many rows (${MAX_ROWS} max).`); return; } setErr(""); setMsg(""); setGrid(g); setOff(new Set()); setMap(guessMapping(kind, g[0])); };
+  const reset = () => { setAssign({}); setResolved(null); setProg(""); setGrid(null); setMap([]); setOff(new Set()); setPaste(""); };
+  const load = (g: string[][]) => { if (g.length < 1) { setErr("That file is empty."); return; } if (g.length > MAX_ROWS + 1) { setErr(`Too many rows (${MAX_ROWS} max).`); return; } setErr(""); setMsg(""); setGrid(g); setAssign({}); setOff(new Set()); setMap(guessMapping(kind, g[0])); };
   const onFile = async (f: File | undefined) => {
     if (!f) return; setErr(""); if (f.size > 2 * 1024 * 1024) return setErr("File is too large (2 MB max).");
     try {
@@ -45,15 +45,19 @@ export function ImportPage() {
   const parsed = grid ? buildRows(kind, body, map, monthly) : [];
 
   // Work out which property (and unit) each row belongs to, and flag rows that can't be placed.
-  const placed = parsed.map(p => {
-    if (kind === "properties") return { pid: null as string | null, unit: null as UnitRow | null, extra: [] as string[], pname: "" };
-    const extra: string[] = []; let prop: PropertyRow | null = null; let portfolio = false;
-    const named = String(p.row.property ?? "").trim();
-    if (named) { const f = findProperty(props, named); if (f === "ambiguous") extra.push(`“${named}” matches more than one property`); else if (!f) extra.push(`Property “${named}” isn’t in your portfolio`); else prop = f; }
+  const placed = parsed.map((p, i) => {
+    if (kind === "properties") return { pid: null as string | null, unit: null as UnitRow | null, extra: [] as string[], pname: "", portfolio: false, needsPick: false };
+    const extra: string[] = []; let prop: PropertyRow | null = null; let portfolio = false; let needsPick = false;
+    const named = String(p.row.property ?? "").trim(); const picked = assign[i];
+    if (picked === "portfolio" && kind === "reminders") portfolio = true;
+    else if (picked) { prop = props.find(x => x.id === picked) ?? null; }
+    else if (named) { const f = findProperty(props, named); if (f === "ambiguous") { extra.push(`“${named}” matches more than one property. Pick one`); needsPick = true; } else if (!f) { extra.push(`“${named}” isn’t in your portfolio. Pick a property`); needsPick = true; } else prop = f; }
     else if (kind === "reminders") portfolio = true;
+    else { extra.push("No address. Pick a property"); needsPick = true; }
+    if (kind === "reminders" && !prop) needsPick = true; // reminders can always be re-pointed
     let unit: UnitRow | null = null;
     if (prop && (kind === "vacancies" || kind === "rent_history") && p.row.unit) { unit = units.find(u => u.property_id === prop!.id && u.label.toLowerCase() === String(p.row.unit).toLowerCase()) ?? null; if (!unit) extra.push(`Unit “${p.row.unit}” isn’t on that property`); }
-    return { pid: prop?.id ?? null, unit, extra, pname: prop ? (prop.nickname || prop.address) : portfolio ? "whole portfolio" : "", portfolio };
+    return { pid: prop?.id ?? null, unit, extra, pname: prop ? (prop.nickname || prop.address) : portfolio ? "whole portfolio" : "", portfolio, needsPick };
   });
   const problemsOf = (i: number) => [...(parsed[i]?.problems ?? []), ...(placed[i]?.extra ?? [])];
   const chosenIdx = parsed.map((_, i) => i).filter(i => !off.has(i) && problemsOf(i).length === 0);
@@ -101,7 +105,7 @@ export function ImportPage() {
   const shown = parsed.slice(0, 60);
   return (<><h1>Import from a spreadsheet</h1><div className="card">
     <p className="note">Rambl reads your file <b>in your browser</b> and saves only the rows you confirm below. The file itself is never uploaded or stored. Use your own records, and leave out account numbers, SSNs and anything else sensitive.</p>
-    <p className="note">Every row needs an <b>Address</b> column (your property’s address or nickname), so one file can cover several buildings. Import <b>Properties</b> first, then everything else. For reminders, leave Address blank for a whole-portfolio reminder.</p>
+    <p className="note">Every row needs an <b>Address</b> column (your property’s address or nickname), so one file can cover several buildings. If a row’s address isn’t found, pick the property from the dropdown in that row. Import <b>Properties</b> first, then everything else. For reminders, leave Address blank for a whole-portfolio reminder.</p>
     {msg && <p className="note" style={{ color: "var(--good)" }}>{msg}</p>}{err && <p className="err">{err}</p>}
     <div className="row"><div><label>What are you importing?<select value={kind} onChange={e => { setKind(e.target.value as Kind); reset(); }}>{(Object.keys(KIND_LABEL) as Kind[]).map(k => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></label></div>
       <div><label>Spreadsheet or CSV file<input type="file" accept=".csv,.tsv,.txt,.xlsx" onChange={e => { onFile(e.target.files?.[0]); e.target.value = ""; }} /></label></div>
@@ -117,7 +121,8 @@ export function ImportPage() {
       <div style={{ overflowX: "auto" }}><table><thead><tr><th />{heads.map((h, c) => <th key={c}>{h || `Column ${c + 1}`}<select value={map[c] ?? ""} disabled={BLOCKED_HEADER.test(h)} onChange={e => setMap(map.map((m, i) => (i === c ? e.target.value : m === e.target.value && e.target.value ? "" : m)))}><option value="">— skip —</option>{FIELDS[kind].map(f => <option key={f.key} value={f.key}>{f.label}</option>)}</select></th>)}<th>Check</th></tr></thead>
         <tbody>{shown.map((p, i) => { const pr = problemsOf(i); return <tr key={i} style={{ opacity: pr.length ? 0.55 : 1 }}>
           <td><input type="checkbox" style={{ width: "auto" }} disabled={pr.length > 0} checked={pr.length === 0 && !off.has(i)} onChange={e => setOff(s => { const n = new Set(s); e.target.checked ? n.delete(i) : n.add(i); return n; })} aria-label={`Include row ${p.line}`} /></td>
-          {body[i].map((c, ci) => <td key={ci}>{ci < heads.length ? c : null}</td>)}<td className="note" style={{ margin: 0 }}>{pr.length ? pr.join("; ") : isDup(i) ? "Already exists, will skip" : kind === "properties" ? "OK" : `OK → ${placed[i].pname}`}</td></tr>; })}</tbody></table></div>
+          {body[i].map((c, ci) => <td key={ci}>{ci < heads.length ? c : null}</td>)}<td className="note" style={{ margin: 0 }}>{kind !== "properties" && props.length > 0 && <select aria-label={`Property for row ${p.line}`} value={assign[i] ?? ""} onChange={e => setAssign(a => { const n = { ...a }; if (e.target.value) n[i] = e.target.value; else delete n[i]; return n; })}><option value="">{placed[i].pid || placed[i].portfolio ? "Change property…" : "Choose property…"}</option>{kind === "reminders" && <option value="portfolio">Whole portfolio</option>}{props.map(x => <option key={x.id} value={x.id}>{x.nickname || x.address}</option>)}</select>} {pr.length ? pr.join("; ") : isDup(i) ? "Already exists, will skip" : kind === "properties" ? "OK" : `OK → ${placed[i].pname}`}</td></tr>; })}</tbody></table></div>
+      {kind !== "properties" && props.length > 0 && parsed.length > 0 && <p className="note">Assign every row to one property: <select aria-label="Assign all rows to a property" value="" onChange={e => { const v = e.target.value; if (v) setAssign(Object.fromEntries(parsed.map((_, i) => [i, v]))); }}><option value="">Choose property…</option>{kind === "reminders" && <option value="portfolio">Whole portfolio</option>}{props.map(x => <option key={x.id} value={x.id}>{x.nickname || x.address}</option>)}</select></p>}
       {parsed.length > 60 && <p className="note">Showing the first 60 of {parsed.length} rows. All rows without problems will be imported.</p>}
       {missingRequired.length > 0 && <p className="err">Match a column to: {missingRequired.map(f => f.label).join(", ")}.</p>}
       {kind === "properties" && resolved && <ResolvedTable list={resolved} setList={setResolved} />}
