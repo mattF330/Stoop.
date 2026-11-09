@@ -28,7 +28,7 @@ export function ImportPage() {
       if (/\.xlsx$/i.test(f.name)) { const { default: readXlsx } = await import("read-excel-file"); const rows = await readXlsx(f); load(rows.map(r => r.map(c => c instanceof Date ? c.toISOString().slice(0, 10) : c == null ? "" : String(c)))); }
       else if (/\.(csv|tsv|txt)$/i.test(f.name)) load(parseCsv(await f.text()));
       else setErr("Use a .csv, .tsv or .xlsx file. (Older .xls: open it and Save As .csv first.)");
-    } catch { setErr("Couldn’t read that file. Check that it’s a valid spreadsheet or CSV."); }
+    } catch (x) { setErr("Couldn’t read that file. Check that it’s a valid spreadsheet or CSV. If it came from another program, open it in Excel or Sheets and save it as .csv. (" + ((x as Error).message || "unknown error").slice(0, 120) + ")"); }
   };
   const body = grid ? (header ? grid.slice(1) : grid) : []; const heads = grid ? (header ? grid[0] : grid[0].map((_, i) => "Column " + (i + 1))) : [];
   useEffect(() => { if (grid && header) setMap(guessMapping(kind, grid[0])); }, [kind, header]);
