@@ -43,7 +43,7 @@ export default function Dashboard() {
       <div className="s"><div className="l">Cash flow / {monthly ? "mo" : "yr"}</div><div className={"v " + (t.cashFlow >= 0 ? "good" : "bad")}>{t.cashFlow > 0 ? "+" : ""}{short(cf(t.cashFlow))}</div></div>
     </div>}
     <div className="row" style={{ alignItems: "center", marginTop: props.length ? 0 : 40 }}><h2 className="lines" style={{ margin: 0 }}>Your lines</h2>
-      {props.length > 0 && <Link to="/reports" className="btn ghost" style={{ textDecoration: "none" }}>Reports</Link>}{props.length > 0 && <button className="ghost" onClick={exportCsv}>Export CSV</button>}<Link to="/import" className="btn ghost" style={{ textDecoration: "none" }}>Import spreadsheet</Link><Link to="/add" className="btn" style={{ textDecoration: "none" }}>Add property</Link></div>
+      {props.length > 0 && <button className="ghost" onClick={exportCsv}>Export CSV</button>}<Link to="/import" className="btn ghost" style={{ textDecoration: "none" }}>Import spreadsheet</Link><Link to="/add" className="btn" style={{ textDecoration: "none" }}>Add property</Link></div>
     {props.length > 0 && <input className="lsearch" aria-label="Search your properties" placeholder="Search your properties" value={filter} onChange={e => setFilter(e.target.value)} />}
     {filter.trim() && matchProps(props, filter).length === 0 && <p className="note">No properties match “{filter}”.</p>}
     <div className="list" style={{ marginTop: 14 }}>{rows.filter(({ p }) => !filter.trim() || matchProps([p], filter).length > 0).map(({ p, m }) => <Link key={p.id} to={`/property/${p.id}`} className="item">
