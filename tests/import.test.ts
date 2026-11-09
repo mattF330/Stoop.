@@ -6,9 +6,9 @@ describe("import", () => {
   it("cleans formulas and long digit runs", () => { expect(cleanText('=HYPERLINK("x")')).toBe('HYPERLINK("x")'); expect(cleanText("acct 123456789012")).toContain("[removed]"); });
   it("maps headers and blocks account columns", () => { expect(guessMapping("units", ["Apt", "Tenant Name", "Monthly Rent", "Lease Expires", "Account Number"])).toEqual(["label", "tenant_name", "monthly_rent", "lease_end", ""]); });
   it("builds rows with problems flagged", () => {
-    const r = buildRows("units", [["1A", "Jo", "$2,000", "7/1/2027"], ["", "X", "abc", "zzz"]], ["label", "tenant_name", "monthly_rent", "lease_end"]);
+    const r = buildRows("units", [["1A", "Jo", "$2,000", "7/1/2027", "1 Main St"], ["", "X", "abc", "zzz", "1 Main St"]], ["label", "tenant_name", "monthly_rent", "lease_end", "property"]);
     expect(r[0].problems).toEqual([]); expect(r[0].row.monthly_rent).toBe(2000); expect(r[0].row.lease_end).toBe("2027-07-01"); expect(r[1].problems.length).toBe(3);
-    const e = buildRows("expenses", [["Con Edison", "100"]], ["category", "annual_amount"], true); expect(e[0].row).toEqual({ category: "Electric (common)", annual_amount: 1200 });
+    const e = buildRows("expenses", [["Con Edison", "100", "1 Main St"]], ["category", "annual_amount", "property"], true); expect(e[0].row).toMatchObject({ category: "Electric (common)", annual_amount: 1200 });
   });
   it("maps property columns and normalizes boroughs", () => {
     expect(guessMapping("properties", ["Street Address", "Boro", "Building Name", "# Units", "Purchase Price", "Purchase Date", "Current Value"])).toEqual(["address", "borough", "nickname", "units_residential", "purchase_price", "purchase_date", "current_value"]);

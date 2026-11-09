@@ -22,12 +22,12 @@ function findProperty(props: PropertyRow[], name: string): PropertyRow | "ambigu
 }
 
 export function ImportPage() {
-  const [props, setProps] = useState<PropertyRow[]>([]); const [units, setUnits] = useState<UnitRow[]>([]); const [target, setTarget] = useState("");
+  const [props, setProps] = useState<PropertyRow[]>([]); const [units, setUnits] = useState<UnitRow[]>([]);
   const [resolved, setResolved] = useState<Resolved[] | null>(null); const [prog, setProg] = useState(""); const [busy, setBusy] = useState(false);
   const [kind, setKind] = useState<Kind>("properties"); const [grid, setGrid] = useState<string[][] | null>(null); const [header, setHeader] = useState(true);
   const [map, setMap] = useState<string[]>([]); const [paste, setPaste] = useState(""); const [err, setErr] = useState(""); const [msg, setMsg] = useState("");
   const [off, setOff] = useState<Set<number>>(new Set()); const [monthly, setMonthly] = useState(false);
-  const loadAll = () => Promise.all([listProperties(), listFor<UnitRow>("units")]).then(([p, u]) => { setProps(p); setUnits(u); setTarget(t => t || (p[0]?.id ?? "")); }).catch(x => setErr((x as Error).message));
+  const loadAll = () => Promise.all([listProperties(), listFor<UnitRow>("units")]).then(([p, u]) => { setProps(p); setUnits(u); }).catch(x => setErr((x as Error).message));
   useEffect(() => { loadAll(); }, []);
   const run = async (f: () => Promise<unknown>) => { setErr(""); setBusy(true); try { await f(); } catch (x) { setErr((x as Error).message); } setBusy(false); };
   const reset = () => { setResolved(null); setProg(""); setGrid(null); setMap([]); setOff(new Set()); setPaste(""); };
@@ -50,9 +50,7 @@ export function ImportPage() {
     const extra: string[] = []; let prop: PropertyRow | null = null; let portfolio = false;
     const named = String(p.row.property ?? "").trim();
     if (named) { const f = findProperty(props, named); if (f === "ambiguous") extra.push(`“${named}” matches more than one property`); else if (!f) extra.push(`Property “${named}” isn’t in your portfolio`); else prop = f; }
-    else if (target === "portfolio" && kind === "reminders") portfolio = true;
-    else if (target) prop = props.find(x => x.id === target) ?? null;
-    else extra.push("Choose a property above or add a Property column");
+    else if (kind === "reminders") portfolio = true;
     let unit: UnitRow | null = null;
     if (prop && (kind === "vacancies" || kind === "rent_history") && p.row.unit) { unit = units.find(u => u.property_id === prop!.id && u.label.toLowerCase() === String(p.row.unit).toLowerCase()) ?? null; if (!unit) extra.push(`Unit “${p.row.unit}” isn’t on that property`); }
     return { pid: prop?.id ?? null, unit, extra, pname: prop ? (prop.nickname || prop.address) : portfolio ? "whole portfolio" : "", portfolio };
@@ -103,10 +101,9 @@ export function ImportPage() {
   const shown = parsed.slice(0, 60);
   return (<><h1>Import from a spreadsheet</h1><div className="card">
     <p className="note">Rambl reads your file <b>in your browser</b> and saves only the rows you confirm below. The file itself is never uploaded or stored. Use your own records, and leave out account numbers, SSNs and anything else sensitive.</p>
-    <p className="note">Tip: add a <b>Property</b> column (address or nickname) and one file can cover several buildings. Import <b>Properties</b> first, then everything else.</p>
+    <p className="note">Every row needs an <b>Address</b> column (your property’s address or nickname), so one file can cover several buildings. Import <b>Properties</b> first, then everything else. For reminders, leave Address blank for a whole-portfolio reminder.</p>
     {msg && <p className="note" style={{ color: "var(--good)" }}>{msg}</p>}{err && <p className="err">{err}</p>}
     <div className="row"><div><label>What are you importing?<select value={kind} onChange={e => { setKind(e.target.value as Kind); reset(); }}>{(Object.keys(KIND_LABEL) as Kind[]).map(k => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></label></div>
-      {kind !== "properties" && <div><label>Property when the file has no Property column<select value={target} onChange={e => setTarget(e.target.value)}>{kind === "reminders" && <option value="portfolio">Whole portfolio</option>}{props.map(p => <option key={p.id} value={p.id}>{p.nickname || p.address}</option>)}</select></label></div>}
       <div><label>Spreadsheet or CSV file<input type="file" accept=".csv,.tsv,.txt,.xlsx" onChange={e => { onFile(e.target.files?.[0]); e.target.value = ""; }} /></label></div>
       <button className="ghost" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([TEMPLATES[kind]], { type: "text/csv" })); a.download = `rambl-${kind}-template.csv`; a.click(); }}>Download template</button></div>
     {kind !== "properties" && !props.length && <p className="note">Add or import a property first, then bring in everything else.</p>}

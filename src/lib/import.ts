@@ -79,8 +79,8 @@ export const FIELDS: Record<Kind, FieldDef[]> = {
   ],
 };
 // Every record type except properties can name its property in the file, so one sheet can cover several buildings.
-export const PROPERTY_FIELD: FieldDef = { key: "property", label: "Property (address or nickname)", type: "text", words: /property|building|address|site/i };
-for (const k of Object.keys(FIELDS) as Kind[]) if (k !== "properties") FIELDS[k].push(PROPERTY_FIELD);
+export const PROPERTY_FIELD: FieldDef = { key: "property", label: "Address", type: "text", words: /address|property|building|site/i };
+for (const k of Object.keys(FIELDS) as Kind[]) if (k !== "properties") FIELDS[k].push({ ...PROPERTY_FIELD, required: k !== "reminders" });
 export const yesNo = (s: unknown): boolean | null => { const t = String(s ?? "").trim().toLowerCase(); return ["y", "yes", "true", "1", "x"].includes(t) ? true : ["n", "no", "false", "0"].includes(t) ? false : null; };
 export const normReminderKind = (s: string | null | undefined): "insurance" | "rate_reset" | "inspection" | "other" => { const t = (s ?? "").toLowerCase(); return /insur/.test(t) ? "insurance" : /rate|reset/.test(t) ? "rate_reset" : /inspect|boiler|facade|elevator|gas/.test(t) ? "inspection" : "other"; };
 export const normRepeat = (s: string | null | undefined): "none" | "monthly" | "quarterly" | "yearly" => { const t = (s ?? "").toLowerCase(); return /month/.test(t) ? "monthly" : /quarter|3 ?mo/.test(t) ? "quarterly" : /year|annual/.test(t) ? "yearly" : "none"; };
@@ -158,12 +158,12 @@ export function buildRows(kind: Kind, data: string[][], mapping: string[], month
 }
 export const TEMPLATES: Record<Kind, string> = {
   properties: "Address,Borough,Nickname,Units,Purchase price,Purchase date,Current value,Property type,Year built,Cash invested,Vacancy %,Notes\n123 Atlantic Ave,Brooklyn,Atlantic,6,1500000,2019-05-01,2100000,Walk-up,1931,450000,5,\n45-10 Vernon Blvd,Queens,,4,,,,,,,,\n",
-  units: "Property,Unit,Tenant,Rent,Lease end,Rent stabilized?\n123 Atlantic Ave,1A,Jane Doe,2500,2027-06-30,no\n123 Atlantic Ave,2A,,2800,,yes\n",
-  loans: "Property,Lender,Loan amount,Rate %,Term (years),Start date\n123 Atlantic Ave,Chase,1000000,6.5,30,2022-01-01\n",
-  vacancies: "Property,Unit,Vacant from,Until,Rent / month,Notes\n123 Atlantic Ave,2A,2026-09-01,2026-10-15,2800,Repainted\n",
-  reminders: "Property,Title,Date,Type,Repeats,Notes\n123 Atlantic Ave,Renew building insurance,2027-03-01,Insurance,Yearly,\n,Pay estimated taxes,2027-01-15,Other,Quarterly,\n",
-  capital: "Property,Item,Installed (year),Expected life (yrs),Replacement cost,Already saved\n123 Atlantic Ave,Roof,2008,20,48000,5000\n123 Atlantic Ave,Boiler,2001,30,35000,0\n",
-  rent_history: "Property,Unit,Effective date,Rent / month,Tenant,Lease end,Note\n123 Atlantic Ave,1A,2025-07-01,2400,Jane Doe,2026-06-30,Original lease\n123 Atlantic Ave,1A,2026-07-01,2500,Jane Doe,2027-06-30,Renewed +4%\n",
-  expenses: "Property,Category,Annual amount\n123 Atlantic Ave,Property tax,18000\n123 Atlantic Ave,Insurance,6000\n",
-  maintenance: "Property,Date,What was done,Contractor,Cost\n123 Atlantic Ave,2026-10-05,Boiler repair,ABC Heating,1200\n",
+  units: "Address,Unit,Tenant,Rent,Lease end,Rent stabilized?\n123 Atlantic Ave,1A,Jane Doe,2500,2027-06-30,no\n123 Atlantic Ave,2A,,2800,,yes\n",
+  loans: "Address,Lender,Loan amount,Rate %,Term (years),Start date\n123 Atlantic Ave,Chase,1000000,6.5,30,2022-01-01\n",
+  vacancies: "Address,Unit,Vacant from,Until,Rent / month,Notes\n123 Atlantic Ave,2A,2026-09-01,2026-10-15,2800,Repainted\n",
+  reminders: "Address,Title,Date,Type,Repeats,Notes\n123 Atlantic Ave,Renew building insurance,2027-03-01,Insurance,Yearly,\n,Pay estimated taxes,2027-01-15,Other,Quarterly,\n",
+  capital: "Address,Item,Installed (year),Expected life (yrs),Replacement cost,Already saved\n123 Atlantic Ave,Roof,2008,20,48000,5000\n123 Atlantic Ave,Boiler,2001,30,35000,0\n",
+  rent_history: "Address,Unit,Effective date,Rent / month,Tenant,Lease end,Note\n123 Atlantic Ave,1A,2025-07-01,2400,Jane Doe,2026-06-30,Original lease\n123 Atlantic Ave,1A,2026-07-01,2500,Jane Doe,2027-06-30,Renewed +4%\n",
+  expenses: "Address,Category,Annual amount\n123 Atlantic Ave,Property tax,18000\n123 Atlantic Ave,Insurance,6000\n",
+  maintenance: "Address,Date,What was done,Contractor,Cost\n123 Atlantic Ave,2026-10-05,Boiler repair,ABC Heating,1200\n",
 };
