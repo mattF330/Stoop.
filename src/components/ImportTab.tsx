@@ -10,6 +10,12 @@ const KIND_LABEL: Record<Kind, string> = {
   properties: "Properties (several buildings at once)", units: "Units & rents (rent roll)", loans: "Loans", expenses: "Yearly operating expenses", maintenance: "Maintenance / repair records",
   vacancies: "Vacancies", reminders: "Reminders & dates", capital: "Capital reserve items", rent_history: "Rent history (past rents per unit)" };
 const TABLE: Record<Exclude<Kind, "properties">, string> = { units: "units", loans: "loans", expenses: "expenses", maintenance: "maintenance_log", vacancies: "vacancies", reminders: "reminders", capital: "capital_items", rent_history: "rent_history" };
+// GeoSearch returns fuzzy results. Only accept a match with the same house number, and in the borough the sheet names (if any).
+const houseNo = (s: string) => (s.trim().match(/^[0-9a-z]+(?:-[0-9a-z]+)?/i)?.[0] ?? "").toLowerCase();
+function pickCandidate<T extends { label: string; borough?: string | null }>(cands: T[], input: string, borough?: string | null): T | undefined {
+  const n = houseNo(input); const sameNo = n ? cands.filter(c => houseNo(c.label) === n) : cands;
+  return (borough ? sameNo.find(c => (c.borough ?? "").toLowerCase() === borough.toLowerCase()) : undefined) ?? (borough ? undefined : sameNo[0]);
+}
 const MAX_ROWS = 500; const MAX_PROPS = 100;
 interface Resolved { line: number; input: string; label: string; bbl: string | null; bin: string | null; borough: string | null; matched: boolean; row: Record<string, any>; note: string; ok: boolean; }
 
@@ -72,7 +78,7 @@ export function ImportPage() {
     const rows = toSave.slice(0, MAX_PROPS).map(i => parsed[i]); const out: Resolved[] = new Array(rows.length); let done = 0, next = 0;
     const work = async () => { while (next < rows.length) { const i = next++; const r = rows[i].row; const q = r.address + (r.borough && !r.address.toLowerCase().includes(r.borough.toLowerCase()) ? `, ${r.borough}` : "");
       let res: Resolved = { line: rows[i].line, input: r.address, label: r.address, bbl: null, bin: null, borough: r.borough ?? boroughOf(null, r.address), matched: false, row: r, note: "", ok: true };
-      try { const c = (await searchAddress(q)).candidates[0]; if (c) res = { ...res, label: c.label, bbl: c.bbl, bin: c.bin, borough: c.borough ?? res.borough, matched: true }; } catch { /* fall back to manual below */ }
+      try { const c = pickCandidate((await searchAddress(q)).candidates, r.address, r.borough); if (c) res = { ...res, label: c.label, bbl: c.bbl, bin: c.bin, borough: c.borough ?? res.borough, matched: true }; } catch { /* fall back to manual below */ }
       if (!res.matched) { res.note = res.borough ? "No city match; will be added as typed" : "No city match. Choose a borough to add it"; res.ok = Boolean(res.borough); }
       else if ((res.bbl && seenBbl.has(res.bbl)) || seenAddr.has(res.label.toLowerCase())) { res.note = "Already in your portfolio, skipping"; res.ok = false; }
       else { if (res.bbl) seenBbl.add(res.bbl); seenAddr.add(res.label.toLowerCase()); }
