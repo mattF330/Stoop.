@@ -132,14 +132,14 @@ export function categoryFor(s: string, cats: string[]): string {
   const t = s.toLowerCase(); const map: [RegExp, string][] = [[/tax/, "Property tax"], [/insur/, "Insurance"], [/water|sewer/, "Water & sewer"], [/heat|fuel|oil|gas/, "Heat / fuel"], [/electric|con ?ed/, "Electric (common)"], [/repair|maint/, "Repairs & maintenance"], [/manage/, "Management"], [/super|payroll|porter/, "Super / payroll"], [/legal|account|attorney|cpa/, "Legal & accounting"]];
   for (const [re, c] of map) if (re.test(t) && cats.includes(c)) return c; return cats.includes("Other") ? "Other" : cats[0];
 }
-export interface Parsed { row: Record<string, any>; line: number; problems: string[]; }
+export interface Parsed { row: Record<string, any>; line: number; problems: string[]; warnings: string[]; }
 export function buildRows(kind: Kind, data: string[][], mapping: string[], monthlyAmounts = false): Parsed[] {
   const out: Parsed[] = []; const defs = FIELDS[kind];
   data.forEach((cells, i) => {
-    const row: Record<string, any> = {}; const problems: string[] = [];
+    const row: Record<string, any> = {}; const problems: string[] = []; const warnings: string[] = [];
     mapping.forEach((key, c) => { if (!key) return; const def = defs.find(d => d.key === key)!; const raw = cells[c] ?? "";
-      if (def.type === "money") { const n = parseMoney(raw); if (n === null && raw.trim()) problems.push(`${def.label}: “${raw}” isn’t a number`); row[key] = n; }
-      else if (def.type === "date") { const d = parseDate(raw); if (d === null && raw.trim()) problems.push(`${def.label}: “${raw}” isn’t a date`); row[key] = d; }
+      if (def.type === "money") { const n = parseMoney(raw); if (n === null && raw.trim()) (def.required ? problems : warnings).push(def.required ? `${def.label}: “${raw}” isn’t a number` : `${def.label} “${raw}” isn’t a number, left blank`); row[key] = n; }
+      else if (def.type === "date") { const d = parseDate(raw); if (d === null && raw.trim()) (def.required ? problems : warnings).push(def.required ? `${def.label}: “${raw}” isn’t a date` : `${def.label} “${raw}” isn’t a date, left blank`); row[key] = d; }
       else row[key] = cleanText(raw) || null; });
     for (const d of defs) if (d.required && (row[d.key] === null || row[d.key] === undefined || row[d.key] === "") && !problems.some(x => x.startsWith(d.label))) problems.push(`${d.label} is missing`);
     if (kind === "expenses" && row.annual_amount != null) { if (monthlyAmounts) row.annual_amount *= 12; if (row.annual_amount < 0) problems.push("Amount is negative"); if (row.category) row.category = categoryFor(row.category, ["Property tax", "Insurance", "Water & sewer", "Heat / fuel", "Electric (common)", "Repairs & maintenance", "Management", "Super / payroll", "Legal & accounting", "Other"]); }
@@ -152,7 +152,7 @@ export function buildRows(kind: Kind, data: string[][], mapping: string[], month
     if (kind === "capital") { for (const k of ["installed_year", "lifespan_years"]) if (row[k] != null) row[k] = Math.round(row[k]); if (row.installed_year != null && (row.installed_year < 1850 || row.installed_year > 2100)) problems.push("Installed year looks wrong"); if (row.lifespan_years != null && (row.lifespan_years < 1 || row.lifespan_years > 150)) problems.push("Expected life should be 1–150 years"); if (row.replacement_cost != null && row.replacement_cost < 0) problems.push("Cost is negative"); }
     if (kind === "rent_history" && row.monthly_rent != null && row.monthly_rent < 0) problems.push("Rent is negative");
     if (kind === "maintenance" && row.cost != null) { row.cost = Math.abs(row.cost); }
-    out.push({ row, line: i + 2, problems });
+    out.push({ row, line: i + 2, problems, warnings });
   });
   return out;
 }
