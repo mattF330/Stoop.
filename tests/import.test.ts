@@ -28,4 +28,9 @@ describe("import", () => {
     expect(buildRows("vacancies", [["1A", "2026-05-01", "2026-04-01", "", "", "x"]], ["unit", "start_date", "end_date", "monthly_rent", "notes", ""])[0].problems.join()).toContain("before");
     expect(buildRows("capital", [["Roof", "1500", "20", "1000", ""]], ["name", "installed_year", "lifespan_years", "replacement_cost", "saved_so_far"])[0].problems.join()).toContain("Installed year");
   });
+  it("treats a Property or first column as the address in a property list", () => {
+    expect(guessMapping("properties", ["Property", "Borough", "Units"])).toEqual(["address", "borough", "units_residential"]);
+    expect(guessMapping("properties", ["Building Name", "Where", "Boro"])).toEqual(["nickname", "address", "borough"]);
+    expect(guessMapping("properties", ["Unknown", "Borough"])).toEqual(["address", "borough"]);
+  });
 });

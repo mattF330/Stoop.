@@ -117,9 +117,16 @@ function ok(y: number, m: number, d: number) { const dt = new Date(Date.UTC(y, m
 // Strip spreadsheet-formula starters and long digit runs (possible account numbers) from free text.
 export function cleanText(s: string): string { let t = s.trim().replace(/^[=+@\t\r]+/, "").trim(); if (/\d[\d\s-]{8,}\d/.test(t) && t.replace(/\D/g, "").length >= 9) t = t.replace(/\d[\d\s-]{8,}\d/g, "[removed]"); return t.slice(0, 200); }
 export function guessMapping(kind: Kind, headers: string[]): (string | "")[] {
-  const used = new Set<string>(); return headers.map(h => {
+  const used = new Set<string>(); const out = headers.map(h => {
     if (BLOCKED_HEADER.test(h)) return ""; const f = FIELDS[kind].find(f => !used.has(f.key) && f.words.test(h.trim())); if (f) { used.add(f.key); return f.key; } return "";
   });
+  if (kind === "properties" && !out.includes("address")) {
+    // A property list's "Property" / "Building" column (or, failing that, the first unmatched column) holds the address.
+    let i = headers.findIndex((h, c) => !out[c] && !BLOCKED_HEADER.test(h) && /property|building|site/i.test(h));
+    if (i < 0) i = out.findIndex((m, c) => !m && !BLOCKED_HEADER.test(headers[c]));
+    if (i >= 0) out[i] = "address";
+  }
+  return out;
 }
 export function categoryFor(s: string, cats: string[]): string {
   const t = s.toLowerCase(); const map: [RegExp, string][] = [[/tax/, "Property tax"], [/insur/, "Insurance"], [/water|sewer/, "Water & sewer"], [/heat|fuel|oil|gas/, "Heat / fuel"], [/electric|con ?ed/, "Electric (common)"], [/repair|maint/, "Repairs & maintenance"], [/manage/, "Management"], [/super|payroll|porter/, "Super / payroll"], [/legal|account|attorney|cpa/, "Legal & accounting"]];
