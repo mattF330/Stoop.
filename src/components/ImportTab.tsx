@@ -59,12 +59,13 @@ export function ImportPage() {
     if (prop && (kind === "vacancies" || kind === "rent_history") && p.row.unit) { unit = units.find(u => u.property_id === prop!.id && u.label.toLowerCase() === String(p.row.unit).toLowerCase()) ?? null; if (!unit) extra.push(`Unit “${p.row.unit}” isn’t on that property`); }
     return { pid: prop?.id ?? null, unit, extra, pname: prop ? (prop.nickname || prop.address) : portfolio ? "whole portfolio" : "", portfolio, needsPick };
   });
-  const problemsOf = (i: number) => [...(parsed[i]?.problems ?? []), ...(placed[i]?.extra ?? [])];
+  const problemsOf = (i: number) => [...(parsed[i]?.problems ?? []).filter(x => !(assign[i] && x === "Address is missing")), ...(placed[i]?.extra ?? [])];
   const chosenIdx = parsed.map((_, i) => i).filter(i => !off.has(i) && problemsOf(i).length === 0);
   const isDup = (i: number) => kind === "units" && units.some(u => u.property_id === placed[i].pid && u.label.toLowerCase() === String(parsed[i].row.label).toLowerCase());
   const toSave = chosenIdx.filter(i => !isDup(i));
   const dupCount = chosenIdx.length - toSave.length;
-  const missingRequired = FIELDS[kind].filter(f => f.required && !map.includes(f.key));
+  const allAssigned = parsed.length > 0 && parsed.every((_, i) => Boolean(assign[i]));
+  const missingRequired = FIELDS[kind].filter(f => f.required && !map.includes(f.key) && !(f.key === "property" && allAssigned));
 
   const lookup = () => run(async () => {
     const existing = await listProperties(); const seenBbl = new Set(existing.map(p => p.bbl).filter(Boolean)); const seenAddr = new Set(existing.map(p => p.address.toLowerCase()));

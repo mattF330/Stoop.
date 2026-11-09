@@ -70,9 +70,10 @@ function invoke(_name: string, opts: { body: any }) {
   if (b.mode === "search") {
     const t = String(b.text ?? "").trim();
     if (/nomatch/i.test(t)) return Promise.resolve({ data: { candidates: [], fetchedAt: new Date().toISOString() }, error: null });
+    let h = 0; for (const ch of t.toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) % 9000; const n = String(1000 + h); // distinct fake lot per address
     return Promise.resolve({ data: { candidates: [
-      { label: `${t} (DEMO match), Brooklyn, NY`, bbl: "3000010001", borough: "Brooklyn", bin: "3000001", lat: 40.69, lng: -73.99 },
-      { label: `${t} (DEMO match), Queens, NY`, bbl: "4000010002", borough: "Queens", bin: "4000002", lat: 40.73, lng: -73.8 }], fetchedAt: new Date().toISOString() }, error: null });
+      { label: `${t} (DEMO match), Brooklyn, NY`, bbl: "30000" + n + "1", borough: "Brooklyn", bin: "3000001", lat: 40.69, lng: -73.99 },
+      { label: `${t} (DEMO match), Queens, NY`, bbl: "40000" + n + "2", borough: "Queens", bin: "4000002", lat: 40.73, lng: -73.8 }], fetchedAt: new Date().toISOString() }, error: null });
   }
   if (b.mode === "lookup") {
     return Promise.resolve({ data: {
