@@ -6,15 +6,14 @@ import { supabase } from "../lib/supabase";
 import { relevantNews, NewsLite } from "../lib/alerts";
 import { isRelevant } from "../../supabase/functions/_shared/relevance";
 import { ReservesTab } from "../components/Reserves";
-import { ImportTab } from "../components/ImportTab";
 import { CapItem } from "../lib/reserves";
 import { MaintenanceTab, VacancyTab, RemindersPanel, LoanSchedule, UnitEditor, UnitHistory } from "../components/OwnerTabs";
 import { MaintRow, VacancyRow, RentHistRow, trailingMaintenance } from "../lib/owner";
 import { Link } from "react-router-dom";
 import { SourceTag, SectionNote, EstimateBadge } from "../components/Disclaimers";
 
-type Tab = "overview" | "debt" | "costs" | "units" | "maintenance" | "vacancy" | "reminders" | "reserves" | "import";
-const TAB_LABEL: Record<Tab, string> = { overview: "Overview", debt: "Debt", costs: "Costs", units: "Units", maintenance: "Maintenance", vacancy: "Vacancy", reminders: "Reminders", reserves: "Reserves", import: "Import" };
+type Tab = "overview" | "debt" | "costs" | "units" | "maintenance" | "vacancy" | "reminders" | "reserves";
+const TAB_LABEL: Record<Tab, string> = { overview: "Overview", debt: "Debt", costs: "Costs", units: "Units", maintenance: "Maintenance", vacancy: "Vacancy", reminders: "Reminders", reserves: "Reserves" };
 const uid = async () => (await supabase.auth.getUser()).data.user!.id;
 
 export default function PropertyDetail() {
@@ -72,7 +71,6 @@ export default function PropertyDetail() {
     {tab === "maintenance" && <MaintenanceTab propertyId={p.id} log={maint} run={run} />}
     {tab === "vacancy" && <VacancyTab propertyId={p.id} units={units} vacs={vacs} run={run} />}
     {tab === "reserves" && <ReservesTab propertyId={p.id} items={caps} run={run} />}
-    {tab === "import" && <ImportTab propertyId={p.id} existingUnits={units.map(u => u.label.toLowerCase())} run={run} />}
     {tab === "reminders" && <RemindersPanel propertyId={p.id} title="Reminders for this property" />}
   </>);
 }

@@ -6,6 +6,7 @@ import AuthPage from "./pages/AuthPage";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import AddProperty from "./pages/AddProperty";
+import { ImportPage } from "./components/ImportTab";
 import UpdateBar from "./components/UpdateBar";
 import { SideStats, SideAccount } from "./components/SideExtras";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -42,7 +43,7 @@ export default function App() {
         {demo && <div className="note" style={{ margin: 0, padding: "0 12px" }}><strong>Demo mode</strong>: fictional sample data stored in this browser only.</div>}
       </aside>
       <div><UpdateBar /><main className="wrap"><Routes>
-        <Route path="/" element={<Dashboard />} /><Route path="/add" element={<AddProperty />} /><Route path="/property/:id" element={<PropertyDetail />} />
+        <Route path="/" element={<Dashboard />} /><Route path="/add" element={<AddProperty />} /><Route path="/import" element={<ImportPage />} /><Route path="/property/:id" element={<PropertyDetail />} />
         <Route path="/map" element={<MapPage />} /><Route path="/news" element={<News />} /><Route path="/calculators" element={<Calculators />} /><Route path="/settings" element={<Settings />} /><Route path="/reports" element={<Reports />} />
         <Route path="*" element={<Navigate to="/" />} /></Routes></main></div>
     </div><Footer />

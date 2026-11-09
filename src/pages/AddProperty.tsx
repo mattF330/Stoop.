@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { searchAddress, Candidate } from "../lib/api";
 import { insertRow, listProperties } from "../lib/data";
 import { supabase } from "../lib/supabase";
@@ -40,6 +40,7 @@ export default function AddProperty() {
     {err && <p className="err">{err}</p>}
     {!sel && cands && cands.length === 0 && <div className="card">No matches. Check the spelling or add the borough. Long Island addresses aren’t covered.</div>}
     {!sel && cands && cands.map((c, i) => <div key={i} className="card row"><div>{c.label}{!c.bbl && <div className="note">No tax-lot ID returned for this match.</div>}</div><button className="ghost" onClick={() => pick(c)}>Select</button></div>)}
+    {!sel && <p className="note">Have several properties? <Link to="/import">Import them from a spreadsheet</Link>.</p>}
     {!sel && !manualAddr && <p><a href="#" onClick={e => { e.preventDefault(); setManualAddr(true); setSel({ label: q, bbl: null, borough: null, bin: null, lat: null, lng: null }); }}>Can’t find it? Add manually</a></p>}
   </>);
 }
