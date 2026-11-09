@@ -1,25 +1,35 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { insertMany, listProperties, listFor, PropertyRow, UnitRow } from "../lib/data";
 import { searchAddress } from "../lib/api";
 import { boroughOf } from "../lib/lines";
 import { supabase } from "../lib/supabase";
-import { FIELDS, Kind, parseCsv, guessMapping, buildRows, TEMPLATES, BLOCKED_HEADER, BOROUGHS } from "../lib/import";
+import { FIELDS, Kind, parseCsv, guessMapping, buildRows, TEMPLATES, BLOCKED_HEADER, BOROUGHS, yesNo } from "../lib/import";
 
 const uid = async () => (await supabase.auth.getUser()).data.user!.id;
-const KIND_LABEL: Record<Kind, string> = { properties: "Properties (several buildings at once)", units: "Units & rents (rent roll)", expenses: "Yearly operating expenses", maintenance: "Maintenance / repair records" };
+const KIND_LABEL: Record<Kind, string> = {
+  properties: "Properties (several buildings at once)", units: "Units & rents (rent roll)", loans: "Loans", expenses: "Yearly operating expenses", maintenance: "Maintenance / repair records",
+  vacancies: "Vacancies", reminders: "Reminders & dates", capital: "Capital reserve items", rent_history: "Rent history (past rents per unit)" };
+const TABLE: Record<Exclude<Kind, "properties">, string> = { units: "units", loans: "loans", expenses: "expenses", maintenance: "maintenance_log", vacancies: "vacancies", reminders: "reminders", capital: "capital_items", rent_history: "rent_history" };
 const MAX_ROWS = 500; const MAX_PROPS = 100;
 interface Resolved { line: number; input: string; label: string; bbl: string | null; bin: string | null; borough: string | null; matched: boolean; row: Record<string, any>; note: string; ok: boolean; }
+
+// Finds the property a row belongs to: exact nickname/address first, then a single partial match on the address.
+function findProperty(props: PropertyRow[], name: string): PropertyRow | "ambiguous" | null {
+  const t = name.trim().toLowerCase(); if (!t) return null;
+  const exact = props.filter(p => (p.nickname ?? "").toLowerCase() === t || p.address.toLowerCase() === t); if (exact.length === 1) return exact[0];
+  const part = props.filter(p => p.address.toLowerCase().startsWith(t) || (p.nickname ?? "").toLowerCase().includes(t) || p.address.toLowerCase().includes(t));
+  return part.length === 1 ? part[0] : part.length > 1 ? "ambiguous" : null;
+}
 
 export function ImportPage() {
   const [props, setProps] = useState<PropertyRow[]>([]); const [units, setUnits] = useState<UnitRow[]>([]); const [target, setTarget] = useState("");
   const [resolved, setResolved] = useState<Resolved[] | null>(null); const [prog, setProg] = useState(""); const [busy, setBusy] = useState(false);
-  useEffect(() => { Promise.all([listProperties(), listFor<UnitRow>("units")]).then(([p, u]) => { setProps(p); setUnits(u); if (p[0]) setTarget(p[0].id); }).catch(x => setErr((x as Error).message)); }, []);
-  const propertyId = target; const existingUnits = units.filter(u => u.property_id === target).map(u => u.label.toLowerCase());
-  const run = async (f: () => Promise<unknown>) => { setErr(""); setBusy(true); try { await f(); } catch (x) { setErr((x as Error).message); } setBusy(false); };
   const [kind, setKind] = useState<Kind>("properties"); const [grid, setGrid] = useState<string[][] | null>(null); const [header, setHeader] = useState(true);
   const [map, setMap] = useState<string[]>([]); const [paste, setPaste] = useState(""); const [err, setErr] = useState(""); const [msg, setMsg] = useState("");
   const [off, setOff] = useState<Set<number>>(new Set()); const [monthly, setMonthly] = useState(false);
+  const loadAll = () => Promise.all([listProperties(), listFor<UnitRow>("units")]).then(([p, u]) => { setProps(p); setUnits(u); setTarget(t => t || (p[0]?.id ?? "")); }).catch(x => setErr((x as Error).message));
+  useEffect(() => { loadAll(); }, []);
+  const run = async (f: () => Promise<unknown>) => { setErr(""); setBusy(true); try { await f(); } catch (x) { setErr((x as Error).message); } setBusy(false); };
   const reset = () => { setResolved(null); setProg(""); setGrid(null); setMap([]); setOff(new Set()); setPaste(""); };
   const load = (g: string[][]) => { if (g.length < 1) { setErr("That file is empty."); return; } if (g.length > MAX_ROWS + 1) { setErr(`Too many rows (${MAX_ROWS} max).`); return; } setErr(""); setMsg(""); setGrid(g); setOff(new Set()); setMap(guessMapping(kind, g[0])); };
   const onFile = async (f: File | undefined) => {
@@ -33,13 +43,30 @@ export function ImportPage() {
   const body = grid ? (header ? grid.slice(1) : grid) : []; const heads = grid ? (header ? grid[0] : grid[0].map((_, i) => "Column " + (i + 1))) : [];
   useEffect(() => { if (grid && header) setMap(guessMapping(kind, grid[0])); }, [kind, header]);
   const parsed = grid ? buildRows(kind, body, map, monthly) : [];
-  const chosen = parsed.filter((p, i) => !off.has(i) && p.problems.length === 0);
-  const dupUnits = kind === "units" ? chosen.filter(p => existingUnits.includes(String(p.row.label).toLowerCase())) : [];
-  const toSave = chosen.filter(p => !dupUnits.includes(p));
+
+  // Work out which property (and unit) each row belongs to, and flag rows that can't be placed.
+  const placed = parsed.map(p => {
+    if (kind === "properties") return { pid: null as string | null, unit: null as UnitRow | null, extra: [] as string[], pname: "" };
+    const extra: string[] = []; let prop: PropertyRow | null = null; let portfolio = false;
+    const named = String(p.row.property ?? "").trim();
+    if (named) { const f = findProperty(props, named); if (f === "ambiguous") extra.push(`“${named}” matches more than one property`); else if (!f) extra.push(`Property “${named}” isn’t in your portfolio`); else prop = f; }
+    else if (target === "portfolio" && kind === "reminders") portfolio = true;
+    else if (target) prop = props.find(x => x.id === target) ?? null;
+    else extra.push("Choose a property above or add a Property column");
+    let unit: UnitRow | null = null;
+    if (prop && (kind === "vacancies" || kind === "rent_history") && p.row.unit) { unit = units.find(u => u.property_id === prop!.id && u.label.toLowerCase() === String(p.row.unit).toLowerCase()) ?? null; if (!unit) extra.push(`Unit “${p.row.unit}” isn’t on that property`); }
+    return { pid: prop?.id ?? null, unit, extra, pname: prop ? (prop.nickname || prop.address) : portfolio ? "whole portfolio" : "", portfolio };
+  });
+  const problemsOf = (i: number) => [...(parsed[i]?.problems ?? []), ...(placed[i]?.extra ?? [])];
+  const chosenIdx = parsed.map((_, i) => i).filter(i => !off.has(i) && problemsOf(i).length === 0);
+  const isDup = (i: number) => kind === "units" && units.some(u => u.property_id === placed[i].pid && u.label.toLowerCase() === String(parsed[i].row.label).toLowerCase());
+  const toSave = chosenIdx.filter(i => !isDup(i));
+  const dupCount = chosenIdx.length - toSave.length;
   const missingRequired = FIELDS[kind].filter(f => f.required && !map.includes(f.key));
+
   const lookup = () => run(async () => {
     const existing = await listProperties(); const seenBbl = new Set(existing.map(p => p.bbl).filter(Boolean)); const seenAddr = new Set(existing.map(p => p.address.toLowerCase()));
-    const rows = toSave.slice(0, MAX_PROPS); const out: Resolved[] = new Array(rows.length); let done = 0, next = 0;
+    const rows = toSave.slice(0, MAX_PROPS).map(i => parsed[i]); const out: Resolved[] = new Array(rows.length); let done = 0, next = 0;
     const work = async () => { while (next < rows.length) { const i = next++; const r = rows[i].row; const q = r.address + (r.borough && !r.address.toLowerCase().includes(r.borough.toLowerCase()) ? `, ${r.borough}` : "");
       let res: Resolved = { line: rows[i].line, input: r.address, label: r.address, bbl: null, bin: null, borough: r.borough ?? boroughOf(null, r.address), matched: false, row: r, note: "", ok: true };
       try { const c = (await searchAddress(q)).candidates[0]; if (c) res = { ...res, label: c.label, bbl: c.bbl, bin: c.bin, borough: c.borough ?? res.borough, matched: true }; } catch { /* fall back to manual below */ }
@@ -51,29 +78,39 @@ export function ImportPage() {
   });
   const addProps = () => run(async () => {
     const u = await uid(); const list = (resolved ?? []).filter(r => r.ok);
-    await insertMany("properties", list.map(r => ({ user_id: u, address: r.label, nickname: r.row.nickname ?? null, borough: r.borough, bbl: r.bbl, bin: r.bin, units_residential: r.row.units_residential ?? null, purchase_price: r.row.purchase_price ?? null, purchase_date: r.row.purchase_date ?? null, current_value: r.row.current_value ?? null })));
-    setMsg(`Added ${list.length} propert${list.length === 1 ? "y" : "ies"} to your portfolio. City data fills in when you open each one.`); reset();
+    await insertMany("properties", list.map(r => ({ user_id: u, address: r.label, nickname: r.row.nickname ?? null, borough: r.borough, bbl: r.bbl, bin: r.bin, units_residential: r.row.units_residential ?? null, purchase_price: r.row.purchase_price ?? null, purchase_date: r.row.purchase_date ?? null, current_value: r.row.current_value ?? null,
+      property_type: r.row.property_type ?? null, year_built: r.row.year_built ?? null, cash_invested: r.row.cash_invested ?? null, ...(r.row.vacancy_pct != null ? { vacancy_pct: r.row.vacancy_pct } : {}), notes: r.row.notes ?? null })));
+    setMsg(`Added ${list.length} propert${list.length === 1 ? "y" : "ies"} to your portfolio. City data fills in when you open each one.`); reset(); loadAll();
   });
   const save = () => run(async () => {
-    const u = await uid(); const base = { user_id: u, property_id: propertyId };
-    const rows = toSave.map(p => {
-      const r = p.row;
-      if (kind === "units") return { ...base, label: r.label, tenant_name: r.tenant_name ?? null, monthly_rent: r.monthly_rent, lease_end: r.lease_end ?? null };
-      if (kind === "expenses") return { ...base, category: r.category, annual_amount: r.annual_amount, is_estimate: false };
-      return { ...base, logged_on: r.logged_on, title: r.title, contractor: r.contractor ?? null, cost: r.cost, counts_in_costs: true };
+    const u = await uid(); const k = kind as Exclude<Kind, "properties">;
+    const rows = toSave.map(i => {
+      const r = parsed[i].row; const pl = placed[i]; const base = { user_id: u, property_id: pl.pid };
+      switch (k) {
+        case "units": return { ...base, label: r.label, tenant_name: r.tenant_name ?? null, monthly_rent: r.monthly_rent, lease_end: r.lease_end ?? null, is_stabilized: yesNo(r.is_stabilized) };
+        case "loans": return { ...base, lender: r.lender ?? null, principal: r.principal, rate_pct: r.rate_pct, term_years: r.term_years, start_date: r.start_date };
+        case "expenses": return { ...base, category: r.category, annual_amount: r.annual_amount, is_estimate: yesNo(r.is_estimate) ?? false };
+        case "maintenance": return { ...base, logged_on: r.logged_on, title: r.title, contractor: r.contractor ?? null, category: r.category ?? null, cost: r.cost, counts_in_costs: true };
+        case "vacancies": return { ...base, unit_id: pl.unit!.id, start_date: r.start_date, end_date: r.end_date ?? null, monthly_rent: r.monthly_rent ?? Number(pl.unit!.monthly_rent), notes: r.notes ?? null };
+        case "reminders": return { user_id: u, property_id: pl.pid, kind: r.kind, title: r.title, due_date: r.due_date, notes: r.notes ?? null, repeat: r.repeat };
+        case "capital": return { ...base, name: r.name, installed_year: r.installed_year, lifespan_years: r.lifespan_years, replacement_cost: r.replacement_cost, saved_so_far: r.saved_so_far ?? 0 };
+        case "rent_history": return { ...base, unit_id: pl.unit!.id, effective_date: r.effective_date, monthly_rent: r.monthly_rent, tenant_name: r.tenant_name ?? null, lease_end: r.lease_end ?? null, note: r.note ?? null };
+      }
     });
-    await insertMany(kind === "units" ? "units" : kind === "expenses" ? "expenses" : "maintenance_log", rows);
-    setMsg(`Imported ${rows.length} row${rows.length === 1 ? "" : "s"}${dupUnits.length ? `; skipped ${dupUnits.length} unit${dupUnits.length === 1 ? "" : "s"} that already exist` : ""}. Nothing else from the file was kept.`); reset();
+    await insertMany(TABLE[k], rows);
+    setMsg(`Imported ${rows.length} row${rows.length === 1 ? "" : "s"}${dupCount ? `; skipped ${dupCount} unit${dupCount === 1 ? "" : "s"} that already exist` : ""}. Nothing else from the file was kept.`); reset(); loadAll();
   });
+  const shown = parsed.slice(0, 60);
   return (<><h1>Import from a spreadsheet</h1><div className="card">
     <p className="note">Rambl reads your file <b>in your browser</b> and saves only the rows you confirm below. The file itself is never uploaded or stored. Use your own records, and leave out account numbers, SSNs and anything else sensitive.</p>
+    <p className="note">Tip: add a <b>Property</b> column (address or nickname) and one file can cover several buildings. Import <b>Properties</b> first, then everything else.</p>
     {msg && <p className="note" style={{ color: "var(--good)" }}>{msg}</p>}{err && <p className="err">{err}</p>}
     <div className="row"><div><label>What are you importing?<select value={kind} onChange={e => { setKind(e.target.value as Kind); reset(); }}>{(Object.keys(KIND_LABEL) as Kind[]).map(k => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}</select></label></div>
+      {kind !== "properties" && <div><label>Property when the file has no Property column<select value={target} onChange={e => setTarget(e.target.value)}>{kind === "reminders" && <option value="portfolio">Whole portfolio</option>}{props.map(p => <option key={p.id} value={p.id}>{p.nickname || p.address}</option>)}</select></label></div>}
       <div><label>Spreadsheet or CSV file<input type="file" accept=".csv,.tsv,.txt,.xlsx" onChange={e => { onFile(e.target.files?.[0]); e.target.value = ""; }} /></label></div>
-      {kind !== "properties" && <div><label>For which property?<select value={target} onChange={e => setTarget(e.target.value)}>{props.map(p => <option key={p.id} value={p.id}>{p.nickname || p.address}</option>)}</select></label></div>}
       <button className="ghost" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([TEMPLATES[kind]], { type: "text/csv" })); a.download = `rambl-${kind}-template.csv`; a.click(); }}>Download template</button></div>
-    {kind !== "properties" && !props.length && <p className="note">Add a property first, then import its units, expenses or maintenance records here.</p>}
-    {!grid && <><label style={{ marginTop: 12, display: "block" }}>…or paste rows copied from a spreadsheet<textarea rows={4} value={paste} onChange={e => setPaste(e.target.value)} placeholder={kind === "properties" ? "Address	Borough	Units&#10;123 Atlantic Ave	Brooklyn	6" : "Unit	Tenant	Rent&#10;1A	Jane	2500"} /></label>
+    {kind !== "properties" && !props.length && <p className="note">Add or import a property first, then bring in everything else.</p>}
+    {!grid && <><label style={{ marginTop: 12, display: "block" }}>…or paste rows copied from a spreadsheet<textarea rows={4} value={paste} onChange={e => setPaste(e.target.value)} placeholder="Copy rows (with the heading row) from your spreadsheet and paste here" /></label>
       <p><button disabled={!paste.trim()} onClick={() => load(parseCsv(paste))}>Preview pasted rows</button></p></>}
     {grid && <>
       <div className="row" style={{ marginTop: 14 }}><label style={{ display: "flex", gap: 6 }}><input type="checkbox" style={{ width: "auto" }} checked={header} onChange={e => setHeader(e.target.checked)} />First row is column headings</label>
@@ -81,16 +118,16 @@ export function ImportPage() {
         <button className="ghost" onClick={reset}>Start over</button></div>
       <p className="note">Match each column to a field. Columns that look like account numbers are skipped automatically.</p>
       <div style={{ overflowX: "auto" }}><table><thead><tr><th />{heads.map((h, c) => <th key={c}>{h || `Column ${c + 1}`}<select value={map[c] ?? ""} disabled={BLOCKED_HEADER.test(h)} onChange={e => setMap(map.map((m, i) => (i === c ? e.target.value : m === e.target.value && e.target.value ? "" : m)))}><option value="">— skip —</option>{FIELDS[kind].map(f => <option key={f.key} value={f.key}>{f.label}</option>)}</select></th>)}<th>Check</th></tr></thead>
-        <tbody>{parsed.slice(0, 60).map((p, i) => <tr key={i} style={{ opacity: p.problems.length ? 0.55 : 1 }}>
-          <td><input type="checkbox" style={{ width: "auto" }} disabled={p.problems.length > 0} checked={p.problems.length === 0 && !off.has(i)} onChange={e => setOff(s => { const n = new Set(s); e.target.checked ? n.delete(i) : n.add(i); return n; })} aria-label={`Include row ${p.line}`} /></td>
-          {body[i].map((c, ci) => <td key={ci}>{ci < heads.length ? c : null}</td>)}<td className="note" style={{ margin: 0 }}>{p.problems.length ? p.problems.join("; ") : dupUnits.includes(p) ? "Already exists, will skip" : "OK"}</td></tr>)}</tbody></table></div>
+        <tbody>{shown.map((p, i) => { const pr = problemsOf(i); return <tr key={i} style={{ opacity: pr.length ? 0.55 : 1 }}>
+          <td><input type="checkbox" style={{ width: "auto" }} disabled={pr.length > 0} checked={pr.length === 0 && !off.has(i)} onChange={e => setOff(s => { const n = new Set(s); e.target.checked ? n.delete(i) : n.add(i); return n; })} aria-label={`Include row ${p.line}`} /></td>
+          {body[i].map((c, ci) => <td key={ci}>{ci < heads.length ? c : null}</td>)}<td className="note" style={{ margin: 0 }}>{pr.length ? pr.join("; ") : isDup(i) ? "Already exists, will skip" : kind === "properties" ? "OK" : `OK → ${placed[i].pname}`}</td></tr>; })}</tbody></table></div>
       {parsed.length > 60 && <p className="note">Showing the first 60 of {parsed.length} rows. All rows without problems will be imported.</p>}
       {missingRequired.length > 0 && <p className="err">Match a column to: {missingRequired.map(f => f.label).join(", ")}.</p>}
       {kind === "properties" && resolved && <ResolvedTable list={resolved} setList={setResolved} />}
       {kind === "properties" && !resolved && <p><button disabled={busy || !toSave.length || missingRequired.length > 0} onClick={lookup}>Look up {Math.min(toSave.length, MAX_PROPS)} address{toSave.length === 1 ? "" : "es"}</button> {prog && <span className="note">{prog}</span>}</p>}
       {kind === "properties" && resolved && <p><button disabled={busy || !resolved.some(r => r.ok)} onClick={addProps}>Add {resolved.filter(r => r.ok).length} to my portfolio</button> <button className="ghost" onClick={() => setResolved(null)}>Back</button></p>}
-      {kind !== "properties" && <p><button disabled={busy || !toSave.length || missingRequired.length > 0 || !target} onClick={save}>Import {toSave.length} row{toSave.length === 1 ? "" : "s"}</button> <span className="note">Rows with problems are left out; fix the file or edit the values and try again.</span></p>}</>}
-    <p className="note">Imported figures are whatever your file says. Rambl doesn’t verify them. {kind === "properties" && "Addresses are matched to NYC records by GeoSearch, which can pick the wrong lot, so check each match before adding. "}{kind === "expenses" && "Categories are matched by keyword; check them on the Costs tab."}</p></div></>);
+      {kind !== "properties" && <p><button disabled={busy || !toSave.length || missingRequired.length > 0} onClick={save}>Import {toSave.length} row{toSave.length === 1 ? "" : "s"}</button> <span className="note">Rows with problems are left out; fix the file or edit the values and try again.</span></p>}</>}
+    <p className="note">Imported figures are whatever your file says. Rambl doesn’t verify them. {kind === "properties" && "Addresses are matched to NYC records by GeoSearch, which can pick the wrong lot, so check each match before adding. "}{kind === "expenses" && "Categories are matched by keyword; check them on the Costs tab. "}{(kind === "loans" || kind === "capital" || kind === "reminders") && "Calculations and reminders use only the numbers and dates you provide."}</p></div></>);
 }
 function ResolvedTable({ list, setList }: { list: Resolved[]; setList: (l: Resolved[]) => void }) {
   return (<div style={{ overflowX: "auto", marginTop: 12 }}><p className="note">Check each match. Untick anything that looks wrong; you can also add it by hand later.</p>
